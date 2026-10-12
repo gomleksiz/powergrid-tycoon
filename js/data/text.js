@@ -23,7 +23,6 @@ export const T = {
     staff: 'Staff', customers: 'Customers', rivals: 'Rivals', goals: 'Goals',
   },
   moreTabs: 'More',
-  mapPlaceholder: 'The map comes in step 4.',
   closePanel: 'Close',
 
   // Sliders
@@ -75,6 +74,56 @@ export const T = {
   // Top bar
   cashAria: (cash, delta) => `Cash ${cash}. Last month ${delta}.`,
   customersAria: (n) => `${n} customers`,
+
+  // Map
+  mapViews: 'Map views',
+  views: { normal: 'Normal', outage: 'Outages', tiers: 'Tiers', rivals: 'Rivals', hazards: 'Hazards' },
+  viewHelp: (n, name) => `V${n}: ${name} view. Press V to change the view.`,
+  zoomIn: 'Zoom in',
+  zoomOut: 'Zoom out',
+  zoomHome: 'Show my sectors',
+  placeConfirm: 'Build here',
+  placeCancel: 'Stop building',
+  placePick: (name, cost) => `Tap a tile for the ${name} (${cost}).`,
+  placeHere: (name, cost) => `Build the ${name} here for ${cost}?`,
+
+  // Sectors
+  sectorTypes: {
+    town: 'Town', suburb: 'Suburb', commercial: 'Commercial', industrial: 'Industrial',
+    river: 'River Valley', hills: 'Hills', fault: 'Fault Line',
+  },
+  hazards: { flood: 'Floods', windstorm: 'Windstorms', earthquake: 'Earthquakes' },
+  hazardLine: (name, m) => `${name} are ${m} times more likely here.`,
+  hazardNone: 'Normal hazard.',
+  windBonus: (pct) => `Wind farms make ${pct}% more power here.`,
+  sectorOwned: 'Your sector',
+  sectorLocked: 'Not open yet',
+  colPotential: 'Possible',
+  buildingsTitle: 'Buildings',
+  noBuildings: 'No buildings yet.',
+  buildTitle: 'Build',
+  buildNeedsOwned: 'Open this sector first. Then you can build here.',
+  buildings: {
+    substation: 'Substation', battery: 'Battery bank', storage: 'Grid storage', solar: 'Solar farm',
+    wind: 'Wind farm', fission: 'Fission plant', fusion: 'Fusion plant',
+  },
+  buildingInfo: {
+    substation: '+ 5 MW capacity in the sector.',
+    battery: '+ 2 MW at the evening peak.',
+    storage: '+ 10 MW at the evening peak.',
+    solar: '+ 2 MW in the day. Clean.',
+    wind: '+ 1.5 MW when the wind blows. Clean.',
+    fission: '+ 25 MW, day and night. Builds in 24 weeks.',
+    fusion: '+ 80 MW. Clean. Builds in 30 weeks.',
+  },
+  buildReasons: {
+    cash: 'Not enough cash.',
+    permit: 'No permit: GS must be 40 or more.',
+    notOwned: 'You can only build in your own sectors.',
+    blocked: 'This place is not free. Pick grass, sand or a field.',
+    locked: 'Locked.',
+    unknown: 'Unknown building.',
+  },
 
   // Monthly report
   reportTitle: (label) => `Report: ${label}`,
@@ -161,5 +210,7 @@ export const T = {
   // News from the simulation (key → text)
   news: {
     emergencyLoan: ({ amount }) => `Cash went below $0. The bank gave an emergency loan of ${amount}.`,
+    buildDone: ({ building, sector }) => `The new ${T.buildings[building] ?? building} in ${sector} is ready.`,
+    buildFailed: ({ reason }) => T.buildReasons[reason] ?? T.buildReasons.blocked,
   },
 };

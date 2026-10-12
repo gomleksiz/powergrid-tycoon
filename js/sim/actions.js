@@ -7,6 +7,7 @@ import { UI, PRICE, BUDGET, TIER_IDS, METERS } from '../data/balance.js';
 import { setSplit } from './budget.js';
 import { takeLoan, repayLoan } from './economy.js';
 import { isTierUnlocked } from './effects.js';
+import { placeBuilding } from './build.js';
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const roundStep = (v, step) => Math.round(v / step) * step;
@@ -51,4 +52,6 @@ export const ACTIONS = {
   'loan/repay': (state) => {
     repayLoan(state);
   },
+
+  'build/place': (state, { type, x, y }) => placeBuilding(state, type, x, y),
 };

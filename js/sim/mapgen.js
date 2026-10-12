@@ -75,9 +75,9 @@ export function sectorBounds(id) {
 }
 
 // The full map: { tiles, plots, roadRows, roadCols, sectors }.
-export function mapgen(seed) {
+export function mapgen(seed, { useCache = true } = {}) {
   const key = seed >>> 0;
-  if (cache.has(key)) return cache.get(key);
+  if (useCache && cache.has(key)) return cache.get(key);
 
   const rng = createRng((key ^ MAP_SALT ^ 0x27d4eb2f) >>> 0);
   const sectors = layoutSectors(key);

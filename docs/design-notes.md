@@ -26,3 +26,14 @@ All numbers are in `js/data/`.
 | Home Valley place | Middle row, column 2 or 3 (seeded), so it has 4 neighbors. | `data/sectors.js` `HOME_CELLS` |
 | Roads | 1 road row in each sector row and 1 road column in each sector column. They join across the map. | `sim/mapgen.js` |
 | Map rng | The map uses its own rng from the seed. It is not saved; it is made again after a load. | `sim/mapgen.js` |
+
+## Step 4 – Map
+
+| Topic | Choice | Where |
+| --- | --- | --- |
+| Sprite art | Drawn in code by `tools/make-sprites.js` (run `node tools/make-sprites.js`). You can redraw `assets/sprites/tiles.png` by hand; keep the positions in `tiles.json`. | `tools/sprites/art.js` |
+| Place a building | Mouse: click places at once (after the checks). Touch: tap a tile, then ✓. | `ui/mapView.js` |
+| Houses | A sector shows houses on its plots in proportion to its customers (player + rival), at least 25% of the plots. | `render/map.js` |
+| Build time | Fission and fusion count down their weeks. Field crews join this in step 6. | `sim/tick.js` |
+| Zoom | Whole-number scales only (1×, 2×, 3×, 4×, 5×, 6×, 8×, 10× device pixels per art pixel). | `render/camera.js` |
+| Keys | + / − zoom, arrow keys move the map, V changes the map view, Esc stops building. | `ui/mapView.js` |

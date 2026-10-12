@@ -10,7 +10,9 @@ import { mountTitle } from './ui/titleScreen.js';
 import { openSaveScreen } from './ui/loadScreen.js';
 import { openPauseMenu } from './ui/pauseMenu.js';
 import { openSettings } from './ui/settings.js';
-import { mountMapCanvas } from './render/mapCanvas.js';
+import { mountMapView } from './ui/mapView.js';
+import { createSectorPanel } from './ui/panels/sector.js';
+import { setUi } from './ui/uiState.js';
 import { mountReport } from './ui/report.js';
 import { createBudgetPanel } from './ui/panels/budget.js';
 import { createCustomersPanel } from './ui/panels/customers.js';
@@ -25,6 +27,7 @@ let pauseMenu = null;
 
 function openMenu() {
   if (pauseMenu?.el.open) return; // the 'close' event comes late, so check .open
+  if (map.isPlacing()) { map.cancelPlacing(); return; } // Esc first stops building
   panel.close();
   pauseMenu = openPauseMenu({
     loop,
@@ -47,7 +50,25 @@ const panel = mountSidepanel({
   panel: $('sidepanel'),
   scrim: $('scrim'),
   bottombar: $('bottombar'),
-  panels: [createBudgetPanel(), createCustomersPanel()],
+  panels: [
+    createSectorPanel({ onBuild: startBuild }),
+    createBudgetPanel(),
+    createCustomersPanel(),
+  ],
+});
+
+// The map must be visible to place a building, so the drawer closes on small screens.
+const narrow = () => window.matchMedia('(max-width: 1023px)').matches;
+function startBuild(type) {
+  if (narrow()) panel.close();
+  map.startPlacing(type);
+}
+
+const map = mountMapView($('map-area'), $('map'), {
+  onSelectSector() {
+    panel.show('sector');
+    if (narrow()) panel.open('sector');
+  },
 });
 mountReport($('map-area'));
 
@@ -61,17 +82,17 @@ const title = mountTitle($('screen-root'), {
   onOpenSettings: () => openSettings(),
 });
 
-let map = null;
 on('game:start', () => {
   title.hide();
   app.hidden = false;
   document.activeElement?.blur(); // focus must not stay in the hidden title screen
-  map ??= mountMapCanvas($('map'));
-  map.resize();
-  panel.refresh();
+  setUi({ selected: null, placing: null, ghost: null, view: 'normal' });
+  map.start();
+  panel.show('sector');
 });
 
 on('game:quit', () => {
+  map.stop();
   app.hidden = true;
   panel.close();
   title.show();

@@ -42,7 +42,7 @@ js/ui/          screens, panels, dialogs, keys
 js/render/      canvas drawing
 assets/         fonts, sprites, sounds, icons
 tests/          node --test
-tools/          sim runner (bots in step 13)
+tools/          sim runner, sprite maker (node tools/make-sprites.js)
 design/         the design document and the development steps
 docs/           design-notes.md: choices where the design leaves a gap
 ```
@@ -61,7 +61,8 @@ The online site is a new origin: saves from `localhost` do not move to it.
 - [x] Step 1 – Skeleton
 - [x] Step 2 – Save and load
 - [x] Step 3 – Money
-- [ ] Step 4 – Map and pixel art
+- [x] Step 4 – Map and pixel art
+- [ ] Step 5 – Grid and outages
 
 ## Credits
 

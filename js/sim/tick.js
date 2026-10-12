@@ -8,6 +8,7 @@ import { globalEffects } from './effects.js';
 
 export function weekTick(state, rng) {
   const events = [{ type: 'week:end', payload: { ...state.time } }];
+  events.push(...advanceConstruction(state));
   state.time.week += 1;
   if (state.time.week > TIME.WEEKS_PER_MONTH) {
     state.time.week = 1;
@@ -63,6 +64,23 @@ function pushHistory(state, money) {
   h.customers.push(totalCustomers(state));
   h.revenue.push(Math.round(money.revenue));
   h.net.push(Math.round(money.net));
+}
+
+// Buildings with a build time (fission, fusion) count down each week.
+function advanceConstruction(state) {
+  const events = [];
+  for (const s of state.sectors) {
+    for (const b of s.buildings) {
+      if (b.status !== 'construction') continue;
+      b.weeksLeft -= 1;
+      if (b.weeksLeft <= 0) {
+        b.status = 'active';
+        delete b.weeksLeft;
+        events.push({ type: 'news', payload: { key: 'buildDone', building: b.type, sector: s.name } });
+      }
+    }
+  }
+  return events;
 }
 
 export function isGameOver(state) {
