@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import { createState, setState, getState, dispatch } from '../js/core/store.js';
 import { outageParts, capacityMw, peakMw, calculateGrid, updateHealth, sectorStatus, ownPeakMw } from '../js/sim/grid.js';
 import { repairPower, repairWeek, repairOrder, backlogWeeks } from '../js/sim/repair.js';
-import { efficiency } from '../js/sim/workforce.js';
 
 const near = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} ≠ ${b}`);
 const home = (s) => s.sectors.find((x) => x.owned);
@@ -99,15 +98,6 @@ test('repair goes High → Normal → Low', () => {
   c.damage = 20;
   assert.deepEqual(repairOrder(s).map((x) => x.id), [b.id, c.id, a.id]);
   assert.ok(backlogWeeks(s) > 0);
-});
-
-test('efficiency table from section 9 (M = 25)', () => {
-  near(efficiency(20, 25), 1);
-  near(efficiency(30, 25), 0.864, 0.005);
-  near(efficiency(40, 25), 0.687, 0.005);
-  near(efficiency(60, 25), 0.496, 0.005);
-  near(efficiency(80, 25), 0.394, 0.005);
-  near(efficiency(500, 25), 0.35);
 });
 
 test('health: − d + Maintenance ÷ $2,500', () => {

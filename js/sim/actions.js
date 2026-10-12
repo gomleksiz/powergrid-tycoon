@@ -4,10 +4,15 @@
 import { weekTick } from './tick.js';
 import { withStateRng } from '../core/rng.js';
 import { UI, PRICE, BUDGET, TIER_IDS, METERS, REPAIR } from '../data/balance.js';
+import { NODES } from '../data/techTree.js';
+import { refreshAvailable } from './setup.js';
 import { setSplit } from './budget.js';
 import { takeLoan, repayLoan } from './economy.js';
 import { isTierUnlocked } from './effects.js';
 import { placeBuilding } from './build.js';
+import { startResearch, cancelResearch, clampTeams, scheduleResearch } from './research.js';
+import { startDeploy, cancelField, activateOneTime } from './deployment.js';
+import { hire, fire, setWage, rush } from './staffing.js';
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const roundStep = (v, step) => Math.round(v / step) * step;
@@ -64,9 +69,40 @@ export const ACTIONS = {
     state.staff.repairFirst = !!on;
   },
 
+  'staff/hire': (state, { role, count }) => { hire(state, role, count); },
+  'staff/fire': (state, { role, count }) => { fire(state, role, count); },
+  'staff/wage': (state, v) => { setWage(state, v); },
+
+  'research/start': (state, { node, teams = 1, leap = false }) => { startResearch(state, node, teams, leap); },
+  'research/cancel': (state, { id }) => { cancelResearch(state, id); },
+  'research/teams': (state, { id, teams }) => {
+    const p = state.projects.find((x) => x.id === id && x.kind === 'research');
+    if (p) { p.teamsWanted = clampTeams(teams); scheduleResearch(state); }
+  },
+  'research/move': (state, { id, dir }) => {
+    const list = state.projects;
+    const i = list.findIndex((x) => x.id === id);
+    let j = i + dir;
+    while (j >= 0 && j < list.length && list[j].kind !== list[i]?.kind) j += dir;
+    if (i < 0 || j < 0 || j >= list.length) return;
+    [list[i], list[j]] = [list[j], list[i]];
+    scheduleResearch(state);
+  },
+  'deploy/start': (state, { node, sector }) => { startDeploy(state, node, sector); },
+  'deploy/cancel': (state, { id }) => { cancelField(state, id); },
+  'tech/activate': (state, { node }) => { activateOneTime(state, node); },
+  'project/rush': (state, { id }) => { rush(state, id); },
+
   // Debug only (the UI sends it with ?debug=1).
   'debug/damage': (state, { sector, amount }) => {
     const s = state.sectors[sector];
     if (s?.owned) s.damage = Math.min(100, s.damage + amount);
   },
+  'debug/unlock': (state, { node }) => {
+    const n = state.tech.nodes[node];
+    if (!n) return;
+    n.status = NODES[node].deploy === null ? 'ACTIVE' : 'UNLOCKED';
+    refreshAvailable(state.tech.nodes);
+  },
+  'debug/cash': (state, amount) => { state.company.cash += amount; },
 };

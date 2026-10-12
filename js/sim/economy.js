@@ -1,6 +1,6 @@
 // Money each month (design section 6). Pure functions on the state.
 
-import { TIERS, TIER_IDS, MONEY, WHOLESALE, SEASON_OF_MONTH, STAFF, BUDGET } from '../data/balance.js';
+import { TIERS, TIER_IDS, MONEY, WHOLESALE, SEASON_OF_MONTH, STAFF, BUDGET, METERS } from '../data/balance.js';
 import { BUILDINGS } from '../data/buildings.js';
 import { diff } from '../data/difficulty.js';
 
@@ -154,3 +154,10 @@ export function spendCapex(state, amount) {
 }
 
 export const buildingCost = (type) => BUILDINGS[type].cost;
+
+// GS above 75 gives a 15 % CapEx tax credit (section 11).
+export const CAPEX_HIGH_GS_DISCOUNT = 0.15;
+
+export function capexCost(state, base) {
+  return Math.round(base * (state.meters.gs > METERS.HIGH ? 1 - CAPEX_HIGH_GS_DISCOUNT : 1));
+}

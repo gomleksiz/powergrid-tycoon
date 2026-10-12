@@ -38,6 +38,8 @@ export function mountReport(root, { isEnabled = () => true } = {}) {
       h('div', { class: `rl total ${m.net >= 0 ? 'good' : 'bad'}` },
         h('span', {}, T.net), h('span', { class: 'num', title: moneyFull(m.net) }, signedMoney(m.net))),
       h('p', { class: 'small' }, T.customersLine(num(r.customers.gained), num(r.customers.lost))),
+      r.staffCosts > 0 ? h('p', { class: 'dim small' }, T.staffCostsLine(money(r.staffCosts))) : null,
+      r.capex > 0 ? h('p', { class: 'dim small' }, T.capexLine(money(r.capex))) : null,
       h('p', { class: 'dim small' }, T.wholesaleLine(`$${m.price.toFixed(3)}`)),
     );
     card.hidden = false;

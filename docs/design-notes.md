@@ -52,3 +52,20 @@ All numbers are in `js/data/`.
 | Map colors | Yellow = H is over the limit of a tier that has customers in the sector. | `sectorStatus` |
 | Repair first | On: all free technicians repair while there is damage. Off: crews for waiting deployments are kept free first. | `repairTechnicians` |
 | Debug | With `?debug=1`, the K key adds 25 damage to the selected sector. | `ui/debug.js` |
+
+## Step 6 – Staff and tech
+
+| Topic | Choice | Where |
+| --- | --- | --- |
+| Firing and ES | ES − 3 for each person fired. | `sim/staffing.js` |
+| Hiring costs | Hiring, firing and rush are paid at once. The report shows them under Net as "Also paid". They are not in the Net formula. | `ui/report.js` |
+| Leapfrog | Automatic: a node is a leapfrog only when its normal prerequisite is not done, but the leap source is. | `sim/research.js` |
+| Fission leap protest | CS − 25 when the leapfrog research is done. | `finishResearch` |
+| Cancel research | The RP stay on the node. A restart goes on from there. | `cancelResearch` |
+| Research in a strike | A strike slows repair and field work only (section 11), not research. | `sim/research.js` |
+| Plant building | Fission and fusion need a field crew for their build weeks (like a deployment). Their CapEx is paid when placed. | `sim/deployment.js` |
+| Rush cost | Research: RP × $50 × 50%. Deployment: CapEx × 50%. Plant: building cost × 50%. | `rushCost` |
+| Waiting deployments | They start in queue order when a crew is free, "Repair first" allows it, and the cash is there. CapEx is paid at the start. | `deployWeek` |
+| Grid Operations Center (O4) | After research, "Switch on" for $50,000 makes it active everywhere. | `activateOneTime` |
+| Auto-pause | When a project is done, the game pauses (Settings can turn it off; step 12). | `main.js` |
+| Debug | With `?debug=1`: `debug/unlock` and `debug/cash` actions (debug panel in step 14). | `sim/actions.js` |

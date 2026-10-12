@@ -7,10 +7,15 @@ import { updateCustomers } from './customers.js';
 import { globalEffects } from './effects.js';
 import { calculateGrid, updateHealth, randomFailures, ownEnergy, averageOutage } from './grid.js';
 import { repairWeek } from './repair.js';
+import { researchWeek } from './research.js';
+import { deployWeek } from './deployment.js';
+import { staffArrive, monthStaff } from './staffing.js';
 
 export function weekTick(state, rng) {
   const events = [{ type: 'week:end', payload: { ...state.time } }];
-  events.push(...advanceConstruction(state));
+  events.push(...staffArrive(state));
+  for (const id of researchWeek(state)) events.push({ type: 'project:done', payload: { kind: 'research', node: id } });
+  for (const p of deployWeek(state)) events.push({ type: 'project:done', payload: { kind: p.kind, node: p.node, type: p.type, sector: p.sector } });
   repairWeek(state);
   state.time.week += 1;
   if (state.time.week > TIME.WEEKS_PER_MONTH) {
@@ -47,6 +52,7 @@ export function monthTick(state, rng) {
     events.push({ type: 'news', payload: { key: 'lineFailure', sector: s.name, kind: 'warn' } });
   }
   for (const s of state.sectors) s.dmgHours = 0;
+  monthStaff(state);
 
   // Wholesale price for next month
   stepWalk(state, rng);
@@ -67,7 +73,10 @@ export function monthTick(state, rng) {
   };
   pushHistory(state, money);
 
+  state.report.staffCosts = state.company.staffCostsThisMonth;
+  state.report.capex = state.company.capexThisMonth;
   state.company.capexThisMonth = 0;
+  state.company.staffCostsThisMonth = 0;
   state.time.month += 1;
   events.push({ type: 'month:end', payload: { month, report: state.report } });
   return events;
@@ -80,23 +89,6 @@ function pushHistory(state, money) {
   h.revenue.push(Math.round(money.revenue));
   h.net.push(Math.round(money.net));
   h.outage.push(+averageOutage(state).toFixed(2));
-}
-
-// Buildings with a build time (fission, fusion) count down each week.
-function advanceConstruction(state) {
-  const events = [];
-  for (const s of state.sectors) {
-    for (const b of s.buildings) {
-      if (b.status !== 'construction') continue;
-      b.weeksLeft -= 1;
-      if (b.weeksLeft <= 0) {
-        b.status = 'active';
-        delete b.weeksLeft;
-        events.push({ type: 'news', payload: { key: 'buildDone', building: b.type, sector: s.name } });
-      }
-    }
-  }
-  return events;
 }
 
 export function isGameOver(state) {

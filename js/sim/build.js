@@ -4,14 +4,10 @@ import { BUILDINGS } from '../data/buildings.js';
 import { METERS } from '../data/balance.js';
 import { mapgen, sectorAt, canPlace } from './mapgen.js';
 import { globalEffects } from './effects.js';
-import { spendCapex } from './economy.js';
+import { spendCapex, capexCost } from './economy.js';
+import { addBuildProject } from './deployment.js';
 
-// GS above 75 gives a 15 % CapEx tax credit (section 11).
-export const CAPEX_HIGH_GS_DISCOUNT = 0.15;
-
-export function capexCost(state, base) {
-  return Math.round(base * (state.meters.gs > METERS.HIGH ? 1 - CAPEX_HIGH_GS_DISCOUNT : 1));
-}
+export { capexCost };
 
 export function buildingUnlocked(state, type, g = globalEffects(state)) {
   const b = BUILDINGS[type];
@@ -46,7 +42,7 @@ export function placeBuilding(state, type, x, y) {
   const b = BUILDINGS[type];
   spendCapex(state, capexCost(state, b.cost));
   const building = { id: state.nextId++, type, x, y, status: b.buildWeeks ? 'construction' : 'active' };
-  if (b.buildWeeks) building.weeksLeft = b.buildWeeks;
   check.sector.buildings.push(building);
+  if (b.buildWeeks) addBuildProject(state, building, check.sector.id);  // a field crew builds it
   return [{ type: 'build:placed', payload: { type, sector: check.sector.id } }];
 }

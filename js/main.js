@@ -17,6 +17,15 @@ import { bindDebugKeys } from './ui/debug.js';
 import { mountReport } from './ui/report.js';
 import { createBudgetPanel } from './ui/panels/budget.js';
 import { createCustomersPanel } from './ui/panels/customers.js';
+import { createResearchPanel } from './ui/panels/research.js';
+import { createProjectsPanel } from './ui/panels/projects.js';
+import { createStaffPanel } from './ui/panels/staff.js';
+import { openTechTree } from './ui/techTreeView.js';
+import { getPrefs } from './ui/prefs.js';
+import { NODES } from './data/techTree.js';
+import { getState } from './core/store.js';
+import { news } from './core/session.js';
+import { T } from './data/text.js';
 
 const $ = (id) => document.getElementById(id);
 const app = $('app');
@@ -54,6 +63,9 @@ const panel = mountSidepanel({
   panels: [
     createSectorPanel({ onBuild: startBuild }),
     createBudgetPanel(),
+    createResearchPanel({ onOpenTree: () => openTechTree() }),
+    createProjectsPanel(),
+    createStaffPanel(),
     createCustomersPanel(),
   ],
 });
@@ -91,6 +103,15 @@ on('game:start', () => {
   setUi({ selected: null, placing: null, ghost: null, view: 'normal' });
   map.start();
   panel.show('sector');
+});
+
+// A project is done: a news line, and a pause if the player wants it.
+on('project:done', (p) => {
+  const s = getState();
+  if (p.kind === 'research') news(T.news.researchDone({ name: NODES[p.node].name }));
+  else if (p.kind === 'deploy') news(T.news.deployDone({ name: NODES[p.node].name, sector: s.sectors[p.sector].name }));
+  else news(T.news.buildDone({ building: p.type, sector: s.sectors[p.sector].name }));
+  if (getPrefs().autoPauseProject) loop.setSpeed(0);
 });
 
 on('game:quit', () => {
