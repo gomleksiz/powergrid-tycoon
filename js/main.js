@@ -21,6 +21,7 @@ import { createCustomersPanel } from './ui/panels/customers.js';
 import { createResearchPanel } from './ui/panels/research.js';
 import { createProjectsPanel } from './ui/panels/projects.js';
 import { createStaffPanel } from './ui/panels/staff.js';
+import { createRivalsPanel } from './ui/panels/rivals.js';
 import { openTechTree } from './ui/techTreeView.js';
 import { getPrefs } from './ui/prefs.js';
 import { NODES } from './data/techTree.js';
@@ -69,6 +70,7 @@ const panel = mountSidepanel({
     createProjectsPanel(),
     createStaffPanel(),
     createCustomersPanel(),
+    createRivalsPanel(),
   ],
 });
 
@@ -130,6 +132,11 @@ on('disaster:hit', (r) => {
   news(T.news.disaster({ name: T.disasterNames[r.type] }), 'error');
   showDisasterReport(r);
 });
+on('rival:enter', (e) => {
+  loop.setSpeed(0);
+  news(T.news.rivalEnter(e), 'error');
+});
+on('rival:leave', (e) => news(T.news.rivalLeave(e)));
 on('event:card', ({ id }) => {
   loop.setSpeed(0);
   showEventCard(id);

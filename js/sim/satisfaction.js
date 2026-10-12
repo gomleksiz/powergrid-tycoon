@@ -73,7 +73,7 @@ export function gsTarget(state, ctx = {}) {
   const H = ctx.H ?? averageOutage(state);
   const lobby = budgetDollars(state).lobbying;
   const uptime = H < SAT.UPTIME_GOOD_H ? SAT.UPTIME_GOOD : H > SAT.UPTIME_BAD_H ? SAT.UPTIME_BAD : 0;
-  const antitrust = marketShare(state) > SAT.ANTITRUST_SHARE && !state.rivalsState?.monopolyCharter ? SAT.ANTITRUST : 0;
+  const antitrust = marketShare(state) > SAT.ANTITRUST_SHARE && !state.rivalPolicy.monopolyCharter ? SAT.ANTITRUST : 0;
   const parts = [
     { key: 'base', value: SAT.GS_BASE },
     { key: 'clean', value: SAT.GS_CLEAN * mix.c },

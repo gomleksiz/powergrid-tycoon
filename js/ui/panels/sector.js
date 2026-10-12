@@ -74,6 +74,7 @@ export function createSectorPanel({ onBuild }) {
 
     const hz = Object.entries(type.hazard);
     fill(info,
+      sec.rival ? h('p', { class: 'small bad' }, '⚔ ', T.sectorRival(T.rivalNames[sec.rival.id], Math.round(sec.rival.strength))) : null,
       hz.length
         ? hz.map(([k, m]) => h('p', { class: 'small warn' }, '⚠ ', T.hazardLine(T.hazards[k], m)))
         : h('p', { class: 'small dim' }, T.hazardNone),

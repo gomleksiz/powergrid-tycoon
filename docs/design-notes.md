@@ -111,3 +111,16 @@ All numbers are in `js/data/`.
 | Event RP | "+ 300 RP" goes to the first research project; with no research, it waits for the next one. | `applyEffects` |
 | Card on load | A card that was waiting at save time opens again after the load. | `main.js` |
 | Debug | `debug/disaster` (strike next week) and `debug/event` with `?debug=1`. | `sim/actions.js` |
+
+## Step 10 – Rivals
+
+| Topic | Choice | Where |
+| --- | --- | --- |
+| Volt Dynamics start | 65 months after Apex (Normal: 55 → 120; Easy 145; Hard 105). | `data/rivals.js` |
+| Entry checks | Each rival checks every 3 months from its start month, and can spread to more sectors. 1 rival per sector. Ties are broken with the seeded rng. | `sim/rivals.js` |
+| Unopened sectors | Unserved share = 1 → entry score 50, so a rival often starts in a sector you do not have yet. | `entryScore` |
+| Rival growth in unserved customers | A rival also wins unserved customers: free × 2% × strength ÷ 50 each month (not in the design, but a rival in an empty sector needs a way to grow). | `rivalsMonth` |
+| "Be better" | The + 3 a month growth stops while your H in that sector is lower than the rival's H (Apex 12–24 h, Volt 1–3 h, rolled each month). | `rivalsMonth` |
+| Local price cut | The cut also lowers m in the move formula, so fewer customers move. | `rivalsMonth` |
+| Buyout | Only in your own sectors. You get the rival customers of the tiers you have unlocked; the others go back to the unserved pool. It counts as CapEx. | `buyout` |
+| Monopoly Charter | After use, no rival can enter again. | `monopolyCharter` |

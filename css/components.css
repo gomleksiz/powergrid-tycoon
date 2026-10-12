@@ -179,7 +179,7 @@ ul.plain { margin: 0; padding-left: 18px; }
 .bar .fill.warn { background: var(--c-warn); }
 .bar .fill.bad { background: var(--c-bad); }
 table.data tr.total td { font-weight: 700; border-top: 2px solid var(--c-line); }
-.seg3 { grid-template-columns: repeat(3, 1fr); }
+.seg.seg3 { grid-template-columns: repeat(3, 1fr); }
 
 /* ---------- Project lists (research, field work) ---------- */
 .btn.wide { width: 100%; margin-bottom: 8px; }
@@ -308,3 +308,10 @@ dialog.tree-dlg::backdrop { background: var(--c-bg); }
 .phase-banner strong { color: var(--c-accent); font-size: var(--fs-big); }
 .phase-banner span { grid-column: 1; font-size: var(--fs-small); }
 .phase-banner .btn { grid-column: 2; grid-row: 1 / span 2; }
+
+/* ---------- Rivals ---------- */
+.tag.apex { background: rgb(255 93 108 / 0.25); color: var(--c-bad); }
+.tag.volt { background: rgb(79 141 255 / 0.25); color: var(--c-info); }
+.cut-row { display: flex; flex-direction: column; gap: 4px; }
+.seg.seg4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.seg.seg4 .btn { padding: 2px 4px; font-size: var(--fs-small); }

@@ -16,6 +16,7 @@ import { hire, fire, setWage, rush } from './staffing.js';
 import { openSector } from './growth.js';
 import { stormPrep } from './disasters.js';
 import { chooseEvent } from './eventCards.js';
+import { setFranchise, monopolyCharter, buyout, setDiscount } from './rivals.js';
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const roundStep = (v, step) => Math.round(v / step) * step;
@@ -70,6 +71,14 @@ export const ACTIONS = {
 
   'disaster/prep': (state, { sector }) => { stormPrep(state, sector); },
   'event/choose': (state, { choice }) => { chooseEvent(state, choice); },
+
+  'rival/franchise': (state, { sector, on }) => { setFranchise(state, sector, on); },
+  'rival/monopoly': (state) => (monopolyCharter(state) ? [{ type: 'news', payload: { key: 'monopoly', kind: 'warn' } }] : []),
+  'rival/buyout': (state, { sector }) => {
+    const name = state.sectors[sector]?.name;
+    return buyout(state, sector) ? [{ type: 'news', payload: { key: 'buyout', sector: name } }] : [];
+  },
+  'sector/discount': (state, { sector, discount }) => { setDiscount(state, sector, discount); },
 
   'sector/priority': (state, { sector, priority }) => {
     const s = state.sectors[sector];

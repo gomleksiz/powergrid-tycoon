@@ -67,7 +67,8 @@ The online site is a new origin: saves from `localhost` do not move to it.
 - [x] Step 7 – Meters
 - [x] Step 8 – Growth
 - [x] Step 9 – Disasters and events
-- [ ] Step 10 – Rivals
+- [x] Step 10 – Rivals
+- [ ] Step 11 – Win and lose
 
 ## Credits
 

@@ -5,6 +5,7 @@ import { ACTIONS } from '../sim/actions.js';
 import { DEFAULT_DIFFICULTY, PRICE, BUDGET, STAFF, METERS } from '../data/balance.js';
 import { DIFFICULTY } from '../data/difficulty.js';
 import { createSectors, createTech } from '../sim/setup.js';
+import { RIVAL_IDS } from '../data/rivals.js';
 
 let state = null;
 const subscribers = new Set();
@@ -44,6 +45,8 @@ export function createState(seed, difficulty = DEFAULT_DIFFICULTY, options = {})
     flags: { phase: 1 },
     disasters: { scheduled: [], active: [], log: [], stormDone: false },
     events: { cooldown: 0, pending: null },
+    rivals: RIVAL_IDS.map((id) => ({ id, entered: false })),
+    rivalPolicy: { franchise: [], monopolyCharter: false },
     sectors,
     tech: createTech(),
     tutorial: { enabled: options.tutorial ?? false, step: 0 },

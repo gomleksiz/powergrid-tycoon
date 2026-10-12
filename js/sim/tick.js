@@ -17,6 +17,7 @@ import { updateProsumers } from './prosumers.js';
 import { disasterWeek, rollDisasters, monthDisasters } from './disasters.js';
 import { rollEventCard } from './eventCards.js';
 import { tickMods } from './market.js';
+import { rivalsMonth } from './rivals.js';
 import { DISASTER } from '../data/disasters.js';
 
 export function weekTick(state, rng) {
@@ -82,6 +83,7 @@ export function monthTick(state, rng) {
 
   // 6. Outside events: disasters for 2 months later, event cards
   tickMods(state);
+  events.push(...rivalsMonth(state, rng));
   monthDisasters(state);
   rollDisasters(state, rng, month + DISASTER.SCHEDULE_AHEAD);
   events.push(...rollEventCard(state, rng));

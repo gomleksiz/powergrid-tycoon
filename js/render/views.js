@@ -113,8 +113,37 @@ function tierBars(ctx, state) {
   ctx.textAlign = 'start';
 }
 
+const RIVAL_COLOR = { apex: 'rgba(255, 93, 108, 0.55)', volt: 'rgba(79, 141, 255, 0.55)' };
+const RIVAL_ICON = { apex: 'icon_apex', volt: 'icon_volt' };
+
+function rivalIcons(ctx, state, big) {
+  for (const s of state.sectors) {
+    if (!s.rival) continue;
+    const b = sectorBounds(s.id);
+    if (!big) { drawSprite(ctx, RIVAL_ICON[s.rival.id], (b.x + b.w - 2) * T, b.y * T + 2); continue; }
+    ctx.save();
+    ctx.translate((b.x + b.w / 2 - 1) * T, (b.y + b.h / 2 - 2) * T);
+    ctx.scale(2, 2);
+    drawSprite(ctx, RIVAL_ICON[s.rival.id], 0, 0);
+    ctx.restore();
+    // strength bar
+    const x = (b.x + 2) * T;
+    const y = (b.y + b.h / 2 + 1) * T;
+    const w = (b.w - 4) * T;
+    ctx.fillStyle = 'rgba(11, 16, 32, 0.9)';
+    ctx.fillRect(x - 2, y - 2, w + 4, 14);
+    ctx.fillStyle = '#ff5d6c';
+    ctx.fillRect(x, y, (w * Math.min(100, s.rival.strength)) / 100, 10);
+  }
+}
+
+overlays.rivals = (ctx, state) => {
+  for (const s of state.sectors) if (s.rival) hatch(ctx, sectorBounds(s.id), RIVAL_COLOR[s.rival.id], s.rival.id === 'apex' ? 6 : 12);
+};
+
 const icons = {
-  normal(ctx, state) { statusIcons(ctx, state, false); },
+  normal(ctx, state) { statusIcons(ctx, state, false); rivalIcons(ctx, state, false); },
+  rivals(ctx, state) { rivalIcons(ctx, state, true); },
   tiers(ctx, state) { tierBars(ctx, state); },
   outage(ctx, state) { statusIcons(ctx, state, true); },
   hazards(ctx, state) {
