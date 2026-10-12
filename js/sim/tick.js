@@ -10,6 +10,8 @@ import { repairWeek } from './repair.js';
 import { researchWeek } from './research.js';
 import { deployWeek } from './deployment.js';
 import { staffArrive, monthStaff } from './staffing.js';
+import { updateMeters } from './satisfaction.js';
+import { marketShare } from './economy.js';
 
 export function weekTick(state, rng) {
   const events = [{ type: 'week:end', payload: { ...state.time } }];
@@ -36,9 +38,11 @@ export function monthTick(state, rng) {
   // 4. Calculate the grid: outage hours of this month (used by money and customers)
   const grid = calculateGrid(state);
 
-  // 1. Collect money
+  // 1. Collect money (fines from last month's audit are paid now)
   const own = ownEnergy(state);
-  const money = monthlyMoney(state, { capexCredit: state.company.capexThisMonth * fx.capexTaxCredit, ownKwh: own.kwh });
+  const penalties = state.govt.finesDue ?? 0;
+  const money = monthlyMoney(state, { capexCredit: state.company.capexThisMonth * fx.capexTaxCredit, ownKwh: own.kwh, penalties });
+  state.govt.finesDue = 0;
   state.company.cash += money.net;
   state.company.lastRevenue = money.revenue;
   state.company.lastNet = money.net;
@@ -51,8 +55,13 @@ export function monthTick(state, rng) {
   for (const s of randomFailures(state, rng)) {
     events.push({ type: 'news', payload: { key: 'lineFailure', sector: s.name, kind: 'warn' } });
   }
-  for (const s of state.sectors) s.dmgHours = 0;
   monthStaff(state);
+
+  // 5. Update the meters
+  const meters = updateMeters(state, rng);
+  events.push(...meters.events);
+  state.govt.finesDue = meters.fine;
+  for (const s of state.sectors) s.dmgHours = 0;
 
   // Wholesale price for next month
   stepWalk(state, rng);
@@ -70,6 +79,7 @@ export function monthTick(state, rng) {
     cash: { start: start.cash, end: state.company.cash },
     loan,
     grid: { avgH: averageOutage(state), peak: grid.totalPeak, gap: grid.gap },
+    meters: { before: meters.before, after: meters.after, reasons: meters.reasons },
   };
   pushHistory(state, money);
 
@@ -89,6 +99,10 @@ function pushHistory(state, money) {
   h.revenue.push(Math.round(money.revenue));
   h.net.push(Math.round(money.net));
   h.outage.push(+averageOutage(state).toFixed(2));
+  h.cs.push(Math.round(state.meters.cs * 10) / 10);
+  h.es.push(Math.round(state.meters.es * 10) / 10);
+  h.gs.push(Math.round(state.meters.gs * 10) / 10);
+  h.share.push(+marketShare(state).toFixed(4));
 }
 
 export function isGameOver(state) {

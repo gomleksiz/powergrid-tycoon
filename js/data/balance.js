@@ -104,6 +104,7 @@ export const GRID = {
   FAILURE_DAMAGE: [5, 15],
   PROSUMER_DAMAGE_CUT: 0.5,
   VPP_KW_PER_PROSUMER: 0.5,
+  PROSUMER_KWH: 150,           // rooftop solar per prosumer home each month
   HEATWAVE_PEAK: 1.25,
   HEATWAVE_SUPPLY: 0.85,
 };
@@ -155,6 +156,21 @@ export const METERS = {
   START: { cs: 60, es: 65, gs: 50 },
   LOW: 30,
   HIGH: 75,
+};
+
+export const SAT = {
+  CS_BASE: 60, CS_PRICE: 40, CS_OUTAGE: 1.5, CS_OUTAGE_MAX: 30, CS_CLEAN: 10, CS_COAL: 10,
+  PR_DIVISOR: 5_000, PR_MAX: 10,
+  ES_BASE: 65, ES_WAGE: 30, ES_CRUNCH: 10, ES_CRUNCH_MAX: 30, ES_OVERLOAD: 20, ES_BACKLOG_WEEKS: 8,
+  GS_BASE: 50, GS_CLEAN: 25, GS_COAL: 20,
+  UPTIME_GOOD_H: 2, UPTIME_BAD_H: 12, UPTIME_GOOD: 10, UPTIME_BAD: -20,
+  LOBBY_DIVISOR: 5_000, PR_LOBBY: 0.15, LOBBY_MAX: 20,
+  ANTITRUST_SHARE: 0.8, ANTITRUST: 15,
+  COAL_SHARE: 0.6,               // k = wholesale share × 0.6
+  STRIKE_CHANCE: 0.5, STRIKE_MONTHS: 1,
+  AUDIT_FINE: [50_000, 250_000], AUDIT_STEP: 10_000, AUDIT_EVERY: 6,
+  LOW_GS_PRICE_MAX: 1.1,
+  ARROW_DEADBAND: 0.5,           // ▲ / ▼ only when the target is this far away
 };
 
 // ---------- Save ----------

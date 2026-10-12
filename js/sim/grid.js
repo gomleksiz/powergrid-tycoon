@@ -41,6 +41,7 @@ export function ownPeakMw(state) {
 export function ownEnergy(state) {
   let kwh = 0;
   let fusion = 0;
+  let clean = 0;
   for (const s of state.sectors) {
     if (!s.owned) continue;
     const bonus = SECTOR_TYPES[s.type].windBonus ?? 0;
@@ -49,10 +50,15 @@ export function ownEnergy(state) {
       const def = BUILDINGS[b.type];
       const k = kwhPerMonth(def, b.type === 'wind' ? bonus : 0);
       kwh += k;
+      if (def.clean) clean += k;
       if (def.fusion) fusion += k;
     }
   }
-  return { kwh, fusion };
+  return { kwh, fusion, clean };
+}
+
+export function prosumerKwh(state) {
+  return state.sectors.reduce((sum, s) => sum + (s.owned ? s.prosumers : 0), 0) * GRID.PROSUMER_KWH;
 }
 
 // Company-wide supply gap at the peak (MW). Only when the wholesaler gives less than all.

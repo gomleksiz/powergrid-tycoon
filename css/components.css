@@ -261,3 +261,36 @@ dialog.tree-dlg::backdrop { background: var(--c-bg); }
   .tree-legend { display: none; }
 }
 .tree-top > .btn { margin-left: auto; }
+
+/* ---------- Meters ---------- */
+.meters { display: flex; gap: 4px; }
+.meter-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  min-height: var(--touch); padding: 2px 8px;
+  border: var(--border); border-radius: var(--radius);
+  background: var(--c-bg); cursor: pointer; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.meter-chip .m-name { font-size: 13px; color: var(--c-text-dim); }
+.meter-chip.bad { border-color: var(--c-bad); }
+.meter-chip.good { border-color: var(--c-good); }
+.meter-chip .m-arrow { font-size: 12px; width: 10px; }
+.popover {
+  position: fixed; z-index: 50;
+  padding: 10px 12px;
+  border: var(--border); border-color: var(--c-text-dim); border-radius: 8px;
+  background: var(--c-surface); box-shadow: var(--shadow);
+}
+.popover p { margin: 4px 0; }
+.report-meters { margin: 4px 0; }
+
+@media (max-width: 1279px) {
+  .topbar .customers { display: none; }
+}
+/* Phone: the meters get their own row under the date and cash. */
+@media (max-width: 599px) {
+  :root { --topbar-h: 100px; }
+  .topbar { flex-wrap: wrap; align-content: center; row-gap: 4px; }
+  .meters { order: 10; width: 100%; justify-content: space-between; }
+  .meter-chip { flex: 1; justify-content: center; min-height: 40px; }
+}

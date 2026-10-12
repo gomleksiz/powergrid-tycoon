@@ -38,6 +38,12 @@ export function mountReport(root, { isEnabled = () => true } = {}) {
       h('div', { class: `rl total ${m.net >= 0 ? 'good' : 'bad'}` },
         h('span', {}, T.net), h('span', { class: 'num', title: moneyFull(m.net) }, signedMoney(m.net))),
       h('p', { class: 'small' }, T.customersLine(num(r.customers.gained), num(r.customers.lost))),
+      r.meters ? h('div', { class: 'small report-meters' }, ['cs', 'es', 'gs'].map((k) => {
+        const a = Math.round(r.meters.before[k]);
+        const b = Math.round(r.meters.after[k]);
+        const why = r.meters.reasons[k] ? T.meterParts[k][r.meters.reasons[k]] : '';
+        return h('div', { class: b > a ? 'good' : b < a ? 'bad' : 'dim' }, T.meterLine(T.meterShort[k], a, b, a === b ? '' : why));
+      })) : null,
       r.staffCosts > 0 ? h('p', { class: 'dim small' }, T.staffCostsLine(money(r.staffCosts))) : null,
       r.capex > 0 ? h('p', { class: 'dim small' }, T.capexLine(money(r.capex))) : null,
       h('p', { class: 'dim small' }, T.wholesaleLine(`$${m.price.toFixed(3)}`)),

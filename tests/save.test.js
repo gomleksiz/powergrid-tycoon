@@ -83,7 +83,7 @@ test('a fake old save migrates and gets the missing fields', () => {
   assert.equal(s.rng, 123);
   assert.equal(s.company.name, 'Old Co');
   assert.deepEqual(s.tutorial, { enabled: false, step: 0 });
-  assert.deepEqual(s.history, { cash: [], customers: [], revenue: [], net: [], outage: [] });
+  assert.deepEqual(s.history, { cash: [], customers: [], revenue: [], net: [], outage: [], cs: [], es: [], gs: [], share: [] });
   assert.equal('date' in s, false);
 });
 

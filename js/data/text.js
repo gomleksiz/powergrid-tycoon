@@ -234,6 +234,24 @@ export const T = {
   pickNode: 'Pick a tech to see what it does.',
   branchPick: 'Branch',
 
+  // Meters
+  meterNames: { cs: 'Customer Satisfaction', es: 'Employee Satisfaction', gs: 'Government Satisfaction' },
+  meterShort: { cs: 'CS', es: 'ES', gs: 'GS' },
+  meterIcons: { cs: '😊', es: '👷', gs: '🏛' },
+  meterAria: (name, v, t) => `${name} ${v}. It moves toward ${t}. Tap for details.`,
+  meterNow: (v, t) => `Now ${v}. It moves slowly toward ${t}.`,
+  meterParts: {
+    cs: { base: 'Start value', price: 'Prices', outage: 'Outages', clean: 'Clean energy', coal: 'Coal power', tech: 'Tech bonus', pr: 'PR budget' },
+    es: { base: 'Start value', wage: 'Wages', crunch: 'Rushed projects', overload: 'Repair backlog', tech: 'Tech bonus' },
+    gs: { base: 'Start value', clean: 'Clean energy', coal: 'Coal power', uptime: 'Reliable power', lobbying: 'Lobbying', antitrust: 'Too big (antitrust)', tech: 'Tech bonus' },
+  },
+  meterEffects: {
+    cs: 'Below 30: more customers leave and rivals come. Above 75: + 10% new customers.',
+    es: 'Below 30: work is slower and strikes can start. Above 75: work is 20% faster.',
+    gs: 'Below 30: audit fines, price max 1.1×, no fission. Above 75: CapEx − 15%.',
+  },
+  meterLine: (name, a, b, reason) => `${name}: ${a} → ${b}${reason ? ` (${reason})` : ''}`,
+
   // Monthly report
   reportTitle: (label) => `Report: ${label}`,
   moneyIn: 'Money in',
@@ -324,6 +342,8 @@ export const T = {
     buildDone: ({ building, sector }) => `The new ${T.buildings[building] ?? building} in ${sector} is ready.`,
     buildFailed: ({ reason }) => T.buildReasons[reason] ?? T.buildReasons.blocked,
     lineFailure: ({ sector }) => `A worn line broke in ${sector}. Crews will repair it.`,
+    strike: () => 'Strike! Employees are unhappy. Repair and field work are 50% slower this month.',
+    audit: ({ amount }) => `Government audit: a fine of ${amount}. Raise GS above 30 to stop audits.`,
     staffArrived: ({ role, count }) => `${count} new ${count === 1 ? T.roleOne[role] : T.roles[role].toLowerCase()} started work.`,
     researchDone: ({ name }) => `Research done: ${name}.`,
     deployDone: ({ name, sector }) => `${name} is now active in ${sector}.`,

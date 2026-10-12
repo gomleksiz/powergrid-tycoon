@@ -8,6 +8,7 @@ import { on } from '../core/bus.js';
 import { dateLabel } from '../core/time.js';
 import { totalCustomers } from '../sim/economy.js';
 import { money, moneyFull, signedMoney, num, numFull } from './format.js';
+import { mountMeters } from './meters.js';
 
 export function mountTopbar(root, { loop, onMenu, onTogglePanel }) {
   const company = h('span', { class: 'company' });
@@ -19,6 +20,7 @@ export function mountTopbar(root, { loop, onMenu, onTogglePanel }) {
   const delta = h('span', { class: 'cash-delta small' });
   const cashBox = h('div', { class: 'stat cash', role: 'group' }, h('span', { 'aria-hidden': 'true' }, '💰'), h('span', { class: 'stack' }, cash, delta));
   const customers = h('span', { class: 'stat customers' });
+  const meters = h('div', { class: 'meters', role: 'group', 'aria-label': 'Meters' });
 
   const speedButtons = TIME.SPEEDS.map((s) => h('button', {
     class: s === 0 ? 'btn' : 'btn speed-n',
@@ -41,6 +43,7 @@ export function mountTopbar(root, { loop, onMenu, onTogglePanel }) {
     h('div', { class: 'date' }, date, pips, weekText),
     cashBox,
     customers,
+    meters,
     h('span', { class: 'spacer' }),
     h('div', { class: 'speeds', role: 'group', 'aria-label': 'Speed' }, speedButtons, cycle),
     h('button', { class: 'btn panel-toggle', onclick: onTogglePanel, 'aria-label': T.panel }, '▤'),
@@ -78,6 +81,7 @@ export function mountTopbar(root, { loop, onMenu, onTogglePanel }) {
     customers.title = T.customersAria(numFull(n));
   }
 
+  mountMeters(meters);
   subscribe((state) => renderState(state));
   on('speed:change', renderSpeed);
   renderSpeed(loop.getSpeed());

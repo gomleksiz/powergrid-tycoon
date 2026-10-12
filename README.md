@@ -64,7 +64,8 @@ The online site is a new origin: saves from `localhost` do not move to it.
 - [x] Step 4 – Map and pixel art
 - [x] Step 5 – Grid and outages
 - [x] Step 6 – Staff and tech
-- [ ] Step 7 – Meters
+- [x] Step 7 – Meters
+- [ ] Step 8 – Growth
 
 ## Credits
 

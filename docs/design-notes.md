@@ -69,3 +69,17 @@ All numbers are in `js/data/`.
 | Grid Operations Center (O4) | After research, "Switch on" for $50,000 makes it active everywhere. | `activateOneTime` |
 | Auto-pause | When a project is done, the game pauses (Settings can turn it off; step 12). | `main.js` |
 | Debug | With `?debug=1`: `debug/unlock` and `debug/cash` actions (debug panel in step 14). | `sim/actions.js` |
+
+## Step 7 – Meters
+
+| Topic | Choice | Where |
+| --- | --- | --- |
+| Clean share c | (own clean kWh + rooftop kWh) ÷ demand, max 1. Rooftop solar = 150 kWh a month for each prosumer home. | `energyMix`, `GRID.PROSUMER_KWH` |
+| Coal share k | Wholesale share × 0.6. Wholesale share = (demand − own − rooftop) ÷ demand. | `energyMix` |
+| m̄ | Price slider weighted by customers, × (1 − local price cut). | `averagePrice` |
+| Audit fine | $50,000–$250,000 in $10,000 steps. Paid with next month's money (as "Penalties"). | `updateMeters` |
+| Prices at GS < 30 | Prices above 1.1× go down to 1.1× at the month tick. | `updateMeters` |
+| Strike | 1 month. A new strike can only start when the last one is over. | `updateMeters` |
+| ▲ / ▼ arrows | Only when the target is more than 0.5 away from the meter. | `SAT.ARROW_DEADBAND` |
+| Report reason | The part of the target (not the start value) that pushes the most in the direction of the change. | `topReason` |
+| Phone top bar | 2 rows: date, cash, pause and speed; then the 3 meters. | `css/components.css` |
