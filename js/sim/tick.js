@@ -18,6 +18,7 @@ import { disasterWeek, rollDisasters, monthDisasters } from './disasters.js';
 import { rollEventCard } from './eventCards.js';
 import { tickMods } from './market.js';
 import { rivalsMonth } from './rivals.js';
+import { checkEnd } from './victory.js';
 import { DISASTER } from '../data/disasters.js';
 
 export function weekTick(state, rng) {
@@ -113,9 +114,11 @@ export function monthTick(state, rng) {
   state.report.capex = state.company.capexThisMonth;
   state.company.capexThisMonth = 0;
   state.company.otherCostsThisMonth = 0;
+  const end = checkEnd(state, month);
   state.time.month += 1;
   events.push({ type: 'month:end', payload: { month, report: state.report } });
-  events.push(...checkPhase(state));
+  events.push(...end);
+  if (!end.length) events.push(...checkPhase(state));
   return events;
 }
 
@@ -133,5 +136,5 @@ function pushHistory(state, money) {
 }
 
 export function isGameOver(state) {
-  return state.time.month > TIME.END_MONTH;
+  return !!state.goals.ended || state.time.month > TIME.END_MONTH;
 }

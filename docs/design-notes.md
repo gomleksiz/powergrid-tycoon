@@ -124,3 +124,16 @@ All numbers are in `js/data/`.
 | Local price cut | The cut also lowers m in the move formula, so fewer customers move. | `rivalsMonth` |
 | Buyout | Only in your own sectors. You get the rival customers of the tiers you have unlocked; the others go back to the unserved pool. It counts as CapEx. | `buyout` |
 | Monopoly Charter | After use, no rival can enter again. | `monopolyCharter` |
+
+## Step 11 – Win and lose
+
+| Topic | Choice | Where |
+| --- | --- | --- |
+| Months left in the score | Only for a win. Without this, losing early gave a high score (a loss at month 8 got a C). | `computeScore` |
+| Fusion share | Own fusion kWh ÷ all customer demand (max 100%). | `energyMix` |
+| Bankruptcy | Counts a month when cash < $0 and the bank cannot give a $50,000 loan (the loan is at its limit). | `updateLoss` |
+| After the end | The clock stops. An ended game is not auto-saved, so "Load the last auto-save" goes back to before the end. | `sim/actions.js`, `core/session.js` |
+| Easy Advisor | The same Advisor as O5, on from the start. | `advisorOn` |
+| Extra Advisor rules | "Lower your prices" (CS < 40 and m̄ > 1.2) and "Start research" (no project), with the 6 rules from section 14. | `data/advisorRules.js` |
+| Suggested budgets | Monopoly 35/15/20/20/10, Singularity 10/40/25/10/15, Utopia 30/15/15/20/20 (Marketing/R&D/Maintenance/Lobbying/PR). | `SUGGESTED_BUDGET` |
+| Debug jumps | `debug/setup` with winMonopoly, winSingularity, winUtopia, loseBankrupt, loseLicense, loseCollapse, endOfTime: 1 month before the end. | `sim/debugSetups.js` |

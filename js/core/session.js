@@ -65,7 +65,8 @@ export function quitToTitle() {
 }
 
 export function autoSave({ quiet = false } = {}) {
-  if (!active) return null;
+  // An ended game is not auto-saved, so "Load the last auto-save" goes back before the end.
+  if (!active || getState().goals.ended) return null;
   const res = writeAuto(getState(), { playTimeSec });
   afterWrite(res, quiet ? null : T.autoSaved);
   return res;

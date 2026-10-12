@@ -17,6 +17,8 @@ import { openSector } from './growth.js';
 import { stormPrep } from './disasters.js';
 import { chooseEvent } from './eventCards.js';
 import { setFranchise, monopolyCharter, buyout, setDiscount } from './rivals.js';
+import { VICTORY } from '../data/advisorRules.js';
+import { debugSetup } from './debugSetups.js';
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const roundStep = (v, step) => Math.round(v / step) * step;
@@ -26,7 +28,7 @@ export function maxPrice(state) {
 }
 
 export const ACTIONS = {
-  'time/week': (state) => withStateRng(state, (rng) => weekTick(state, rng)),
+  'time/week': (state) => (state.goals.ended ? [] : withStateRng(state, (rng) => weekTick(state, rng))),
 
   'company/rename': (state, name) => {
     state.company.name = String(name).slice(0, UI.COMPANY_NAME_MAX);
@@ -79,6 +81,19 @@ export const ACTIONS = {
     return buyout(state, sector) ? [{ type: 'news', payload: { key: 'buyout', sector: name } }] : [];
   },
   'sector/discount': (state, { sector, discount }) => { setDiscount(state, sector, discount); },
+
+  'goals/target': (state, path) => {
+    state.goals.target = VICTORY.PATHS.includes(path) ? path : null;
+  },
+  'budget/setAll': (state, split) => {
+    if (BUDGET.KEYS.reduce((n, k) => n + (split[k] ?? 0), 0) !== 100) return;
+    state.budget.split = Object.fromEntries(BUDGET.KEYS.map((k) => [k, split[k]]));
+    state.budget.locks = Object.fromEntries(BUDGET.KEYS.map((k) => [k, false]));
+  },
+  'prices/down': (state, step) => {
+    for (const t of TIER_IDS) state.prices[t] = +Math.max(PRICE.MIN, state.prices[t] - step).toFixed(2);
+  },
+  'debug/setup': (state, name) => { debugSetup(state, name); },
 
   'sector/priority': (state, { sector, priority }) => {
     const s = state.sectors[sector];

@@ -47,6 +47,12 @@ export function createState(seed, difficulty = DEFAULT_DIFFICULTY, options = {})
     events: { cooldown: 0, pending: null },
     rivals: RIVAL_IDS.map((id) => ({ id, entered: false })),
     rivalPolicy: { franchise: [], monopolyCharter: false },
+    goals: {
+      target: null,
+      hold: { monopoly: 0, singularity: 0, utopia: 0 },
+      loss: { bankrupt: 0, license: 0, collapse: 0 },
+      ended: null,
+    },
     sectors,
     tech: createTech(),
     tutorial: { enabled: options.tutorial ?? false, step: 0 },

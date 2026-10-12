@@ -22,6 +22,10 @@ import { createResearchPanel } from './ui/panels/research.js';
 import { createProjectsPanel } from './ui/panels/projects.js';
 import { createStaffPanel } from './ui/panels/staff.js';
 import { createRivalsPanel } from './ui/panels/rivals.js';
+import { createGoalsPanel } from './ui/panels/goals.js';
+import { mountEndScreen, mountLossBanners } from './ui/endScreen.js';
+import { readContinue } from './save/save.js';
+import { alertDialog } from './ui/dialog.js';
 import { openTechTree } from './ui/techTreeView.js';
 import { getPrefs } from './ui/prefs.js';
 import { NODES } from './data/techTree.js';
@@ -71,6 +75,7 @@ const panel = mountSidepanel({
     createStaffPanel(),
     createCustomersPanel(),
     createRivalsPanel(),
+    createGoalsPanel(),
   ],
 });
 
@@ -89,6 +94,21 @@ const map = mountMapView($('map-area'), $('map'), {
 });
 mountReport($('map-area'));
 const phaseBanner = mountPhaseBanner($('map-area'));
+mountLossBanners($('map-area'));
+
+const endScreen = mountEndScreen($('screen-root'), {
+  onLoadAuto() {
+    const res = readContinue();
+    if (res.ok) loadGame(res, T.newestAutoSave);
+    else alertDialog(T.loadError);
+  },
+  onLoadSlot: () => openSaveScreen({ mode: 'load', onLoaded: loadGame }),
+  onTitle: quitToTitle,
+});
+on('game:end', (e) => {
+  loop.setSpeed(0);
+  endScreen.show(e);
+});
 
 mountTopbar($('topbar'), { loop, onMenu: openMenu, onTogglePanel: () => panel.toggle() });
 bindKeys({ loop, isPlaying: isActive, onMenu: openMenu });
@@ -109,6 +129,8 @@ on('game:start', () => {
   map.start();
   panel.show('sector');
   if (getState().time.month === 1 && getState().time.week === 1) phaseBanner.show(1);
+  endScreen.hide();
+  if (getState().goals.ended) { endScreen.show(getState().goals.ended); return; }
   if (getState().events.pending) showEventCard(getState().events.pending.id);   // a card from before the save
 });
 
@@ -143,6 +165,7 @@ on('event:card', ({ id }) => {
 });
 
 on('game:quit', () => {
+  endScreen.hide();
   map.stop();
   app.hidden = true;
   panel.close();

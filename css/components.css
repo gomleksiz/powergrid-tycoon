@@ -315,3 +315,30 @@ dialog.tree-dlg::backdrop { background: var(--c-bg); }
 .cut-row { display: flex; flex-direction: column; gap: 4px; }
 .seg.seg4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
 .seg.seg4 .btn { padding: 2px 4px; font-size: var(--fs-small); }
+
+/* ---------- Goals ---------- */
+.proj.mine { border-color: var(--c-accent); }
+.proj.tip { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+.proj.tip p { margin: 0; }
+
+/* ---------- Loss banners ---------- */
+.loss-banners { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 6px; z-index: 9; width: min(560px, calc(100% - 24px)); pointer-events: none; }
+.loss-banner { padding: 10px 14px; border-radius: 8px; background: #8e1f2c; border: 2px solid var(--c-bad); color: #fff; font-weight: 700; box-shadow: var(--shadow); }
+
+/* ---------- End screen ---------- */
+.end-screen { position: fixed; inset: 0; overflow-y: auto; background: rgb(11 16 32 / 0.97); z-index: 40; padding: 24px 16px; }
+.end-card { width: min(980px, 100%); margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.end-title { font-size: clamp(28px, 6vw, 44px); margin: 0; }
+.end-title.win { color: var(--c-accent); }
+.end-title.loss { color: var(--c-bad); }
+.grade-row { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
+.grade { display: grid; place-items: center; width: 110px; height: 110px; border-radius: 12px; font-size: 72px; font-weight: 700; border: 4px solid; }
+.grade-S { color: var(--c-accent); border-color: var(--c-accent); }
+.grade-A { color: var(--c-good); border-color: var(--c-good); }
+.grade-B { color: var(--c-info); border-color: var(--c-info); }
+.grade-C { color: var(--c-warn); border-color: var(--c-warn); }
+.grade-D { color: var(--c-bad); border-color: var(--c-bad); }
+.chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.chart-box { border: var(--border); border-radius: var(--radius); background: var(--c-surface); padding: 8px 10px; }
+.chart-box h4 { margin: 0 0 4px; }
+.chart { width: 100%; height: 150px; display: block; }

@@ -21,7 +21,7 @@ function recordDisasters(months, start = null) {
   const offCard = on('event:card', () => dispatch({ type: 'event/choose', payload: { choice: 0 } }));
   const s = start ?? getState();
   const end = s.time.month + months;
-  while (s.time.month < end) dispatch({ type: 'time/week' });
+  while (s.time.month < end && !s.goals.ended) dispatch({ type: 'time/week' });
   off();
   offCard();
   return seen;
@@ -181,9 +181,11 @@ test('about 1 event card each 6 months', () => {
   let cards = 0;
   const off = on('event:card', () => { cards++; dispatch({ type: 'event/choose', payload: { choice: 1 } }); });
   const s = getState();
-  while (s.time.month < 241) dispatch({ type: 'time/week' });
+  // An idle company can lose before 2049, so stop at the end of the game.
+  while (s.time.month < 241 && !s.goals.ended) dispatch({ type: 'time/week' });
   off();
-  assert.ok(cards >= 15 && cards <= 50, `cards ${cards}`);
+  const perMonth = cards / s.time.month;
+  assert.ok(perMonth > 1 / 14 && perMonth < 1 / 4, `${cards} cards in ${s.time.month} months`);
   assert.ok(Object.keys(EVENTS).length >= 5);
 });
 
