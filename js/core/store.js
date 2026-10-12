@@ -55,7 +55,7 @@ export function createState(seed, difficulty = DEFAULT_DIFFICULTY, options = {})
     },
     sectors,
     tech: createTech(),
-    tutorial: { enabled: options.tutorial ?? false, step: 0 },
+    tutorial: { enabled: options.tutorial ?? false, step: 0, breakDone: false },
     history: { cash: [], customers: [], revenue: [], net: [], outage: [], cs: [], es: [], gs: [], share: [] },
     report: null,
   };

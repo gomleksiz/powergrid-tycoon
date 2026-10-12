@@ -1,7 +1,7 @@
 // Weekly and monthly simulation steps. No DOM, no Math.random().
 // Each function changes the state and returns a list of events.
 
-import { TIME } from '../data/balance.js';
+import { TIME, TUTORIAL } from '../data/balance.js';
 import { monthlyMoney, budgetDollars, stepWalk, emergencyLoan, totalCustomers } from './economy.js';
 import { updateCustomers } from './customers.js';
 import { globalEffects } from './effects.js';
@@ -116,6 +116,7 @@ export function monthTick(state, rng) {
   state.company.otherCostsThisMonth = 0;
   const end = checkEnd(state, month);
   state.time.month += 1;
+  events.push(...tutorialScript(state));
   events.push({ type: 'month:end', payload: { month, report: state.report } });
   events.push(...end);
   if (!end.length) events.push(...checkPhase(state));
@@ -133,6 +134,16 @@ function pushHistory(state, money) {
   h.es.push(Math.round(state.meters.es * 10) / 10);
   h.gs.push(Math.round(state.meters.gs * 10) / 10);
   h.share.push(+marketShare(state).toFixed(4));
+}
+
+// Tutorial step 5: a line breaks in Home Valley at the start of month 3.
+function tutorialScript(state) {
+  const t = state.tutorial;
+  if (!t.enabled || t.breakDone || state.time.month < TUTORIAL.BREAK_MONTH) return [];
+  const home = state.sectors.find((s) => s.owned);
+  home.damage = Math.min(100, home.damage + TUTORIAL.BREAK_DAMAGE);
+  t.breakDone = true;
+  return [{ type: 'tutorial:break', payload: { sector: home.id } }];
 }
 
 export function isGameOver(state) {

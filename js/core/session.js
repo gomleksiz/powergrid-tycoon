@@ -75,6 +75,7 @@ export function autoSave({ quiet = false } = {}) {
 export function saveToSlot(n) {
   const res = writeSlot(n, getState(), { playTimeSec });
   afterWrite(res, T.saved(T.slotName(n)));
+  if (res.ok) emit('game:saved', { slot: n });
   return res;
 }
 

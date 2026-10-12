@@ -6,6 +6,7 @@ import { UI } from '../data/balance.js';
 import { on } from '../core/bus.js';
 import { dateLabel } from '../core/time.js';
 import { money, moneyFull, signedMoney, num } from './format.js';
+import { readButton, textOf } from './readAloud.js';
 
 export function mountReport(root, { isEnabled = () => true } = {}) {
   const card = h('section', { class: 'report-card', hidden: true, 'aria-live': 'polite' });
@@ -26,6 +27,8 @@ export function mountReport(root, { isEnabled = () => true } = {}) {
     fill(card,
       h('div', { class: 'report-head' },
         h('h3', {}, T.reportTitle(dateLabel(r.month))),
+        h('span', { class: 'spacer' }),
+        readButton(() => textOf(card)),
         h('button', { class: 'btn', 'aria-label': T.closeReport, onclick: hide }, '✕')),
       h('div', { class: 'report-cols' },
         h('div', {},

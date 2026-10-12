@@ -13,6 +13,19 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'Lexend';
+  src: url('../assets/fonts/lexend-400.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lexend';
+  src: url('../assets/fonts/lexend-700.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+
 :root {
   /* Night-grid palette */
   --c-bg: #0b1020;
@@ -118,3 +131,25 @@ input[type="number"] {
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+/* ---------- Settings (classes on <html>) ---------- */
+html.font-lexend { --font: 'Lexend', system-ui, -apple-system, 'Segoe UI', sans-serif; }
+html.font-system { --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+html.reduce-motion * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+
+/* High contrast: pure black and white, bright accent, thick borders. */
+html.high-contrast {
+  --c-bg: #000;
+  --c-surface: #000;
+  --c-surface-2: #111;
+  --c-line: #fff;
+  --c-text: #fff;
+  --c-text-dim: #e6e6e6;
+  --c-accent: #ffe500;
+  --c-good: #00ff9c;
+  --c-warn: #ffb000;
+  --c-bad: #ff4d5e;
+  --c-info: #5cc8ff;
+  --border: 3px solid var(--c-line);
+}
+html.high-contrast .btn-primary { color: #000; }

@@ -7,7 +7,7 @@
   height: 100dvh;
   display: grid;
   grid-template-columns: 1fr var(--panel-w);
-  grid-template-rows: var(--topbar-h) 1fr var(--newsbar-h);
+  grid-template-rows: auto 1fr auto;   /* the bars size to their text (text size 90–150 %) */
   grid-template-areas:
     "top  top"
     "map  side"
@@ -17,6 +17,11 @@
 /* ---------- Top bar ---------- */
 .topbar {
   grid-area: top;
+  min-height: 56px;
+  flex-wrap: wrap;
+  row-gap: 4px;
+  padding-top: 4px;
+  padding-bottom: 4px;
   display: flex;
   align-items: center;
   gap: var(--gap);
@@ -27,7 +32,8 @@
   border-bottom: var(--border);
   min-width: 0;
 }
-.topbar .company { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.topbar .company { font-weight: 700; white-space: nowrap; }
+.topbar .date strong { white-space: nowrap; }
 .topbar .spacer { flex: 1; }
 .topbar .date { display: flex; flex-direction: column; align-items: center; line-height: 1.1; min-width: 92px; }
 .topbar .date strong { font-size: var(--fs); }
@@ -72,6 +78,7 @@
 /* ---------- News bar ---------- */
 .newsbar {
   grid-area: news;
+  min-height: 40px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -79,12 +86,11 @@
   background: var(--c-surface);
   border-top: var(--border);
   font-size: var(--fs-small);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 .newsbar .tag { color: var(--c-accent); font-weight: 700; }
-.newsbar .msg { overflow: hidden; text-overflow: ellipsis; }
+.newsbar .msg { overflow-wrap: anywhere; }
 .newsbar.warn .tag { color: var(--c-warn); }
 .newsbar.error .tag { color: var(--c-bad); }
 
@@ -130,9 +136,8 @@
 
 /* ===== Phone: less than 600 px ===== */
 @media (max-width: 599px) {
-  :root { --topbar-h: 52px; --newsbar-h: 36px; }
   .app {
-    grid-template-rows: var(--topbar-h) 1fr var(--newsbar-h) calc(var(--bottombar-h) + env(safe-area-inset-bottom));
+    grid-template-rows: auto 1fr auto auto;
     grid-template-areas:
       "top"
       "map"
@@ -154,13 +159,16 @@
     z-index: 30;
     display: grid;
     grid-auto-flow: column;
-    grid-auto-columns: 1fr;
+    grid-auto-columns: minmax(max-content, 1fr);   /* big text: the bar scrolls, nothing is cut */
+    overflow-x: auto;
+    min-height: 60px;
     background: var(--c-surface);
     border-top: var(--border);
     padding-bottom: env(safe-area-inset-bottom);
   }
   .bottombar button {
     min-height: var(--touch);
+    padding: 0 10px;
     border: 0;
     background: transparent;
     font-size: var(--fs-small);
@@ -173,7 +181,7 @@
     top: auto;
     left: 0;
     right: 0;
-    bottom: calc(var(--bottombar-h) + env(safe-area-inset-bottom));
+    bottom: var(--bottombar-h);
     width: auto;
     max-height: 60dvh;
     border-left: 0;
@@ -181,5 +189,5 @@
     border-radius: 12px 12px 0 0;
     transform: translateY(105%);
   }
-  .scrim { inset: var(--topbar-h) 0 calc(var(--bottombar-h) + env(safe-area-inset-bottom)) 0; }
+  .scrim { inset: var(--topbar-h) 0 var(--bottombar-h) 0; }
 }

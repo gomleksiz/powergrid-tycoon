@@ -4,6 +4,7 @@ import { h, fill } from './dom.js';
 import { alertDialog } from './dialog.js';
 import { T } from '../data/text.js';
 import { DIFFICULTIES, DEFAULT_DIFFICULTY, GAME_VERSION, UI } from '../data/balance.js';
+import { DIFFICULTY } from '../data/difficulty.js';
 import { hasContinue, readContinue } from '../save/save.js';
 import { fnv1a } from '../save/checksum.js';
 
@@ -18,7 +19,7 @@ export function parseSeed(text) {
   return t === '' ? randomSeed() : fnv1a(t);
 }
 
-export function mountTitle(root, { onNewGame, onLoaded, onOpenLoad, onOpenSettings }) {
+export function mountTitle(root, { onNewGame, onLoaded, onOpenLoad, onOpenSettings, onOpenCredits }) {
   const screen = h('section', { class: 'title-screen', 'aria-label': T.gameTitle });
   root.append(screen);
 
@@ -39,6 +40,7 @@ export function mountTitle(root, { onNewGame, onLoaded, onOpenLoad, onOpenSettin
         h('button', { class: canContinue ? 'btn' : 'btn btn-primary', onclick: showNewGame }, T.newGame),
         h('button', { class: 'btn', onclick: onOpenLoad }, T.load),
         h('button', { class: 'btn', onclick: onOpenSettings }, T.settings),
+        h('button', { class: 'btn', onclick: onOpenCredits }, T.credits),
       ),
       h('p', { class: 'title-foot dim small' }, T.versionInfo(GAME_VERSION)),
     );
@@ -56,7 +58,8 @@ export function mountTitle(root, { onNewGame, onLoaded, onOpenLoad, onOpenSettin
     let difficulty = DEFAULT_DIFFICULTY;
     const name = h('input', { type: 'text', id: 'ng-name', maxLength: UI.COMPANY_NAME_MAX, value: T.companyNameDefault, autocomplete: 'off' });
     const seed = h('input', { type: 'text', id: 'ng-seed', inputMode: 'numeric', value: String(randomSeed()), autocomplete: 'off' });
-    const tutorial = h('input', { type: 'checkbox', checked: true });
+    // The tutorial is on by default for Easy and Normal (section 15).
+    const tutorial = h('input', { type: 'checkbox', checked: DIFFICULTY[difficulty].tutorialDefault });
     const diffButtons = DIFFICULTIES.map((d) => h('button', {
       type: 'button',
       class: 'btn',
@@ -64,6 +67,7 @@ export function mountTitle(root, { onNewGame, onLoaded, onOpenLoad, onOpenSettin
       onclick: () => {
         difficulty = d;
         diffButtons.forEach((b, i) => b.setAttribute('aria-pressed', String(DIFFICULTIES[i] === d)));
+        tutorial.checked = DIFFICULTY[d].tutorialDefault;
       },
     }, T.difficulty[d]));
 

@@ -183,6 +183,12 @@ export const SAVE = {
   META_SUFFIX: '.meta',
 };
 
+export const TUTORIAL = {
+  STEPS: 8,
+  BREAK_MONTH: 3,          // the scripted line break (step 5)
+  BREAK_DAMAGE: 30,
+};
+
 export const UI = {
   NEWS_MAX_ITEMS: 5,
   NEWS_LOG_MAX: 60,

@@ -9,6 +9,7 @@ import { EVENTS } from '../data/events.js';
 import { getState, dispatch, subscribe } from '../core/store.js';
 import { canPrep } from '../sim/disasters.js';
 import { money } from './format.js';
+import { readButton, textOf } from './readAloud.js';
 
 // An event card must be answered: it cannot be closed with Esc.
 export function showEventCard(id) {
@@ -21,6 +22,7 @@ export function showEventCard(id) {
     }, card.choices[i]))),
   ], { closable: false });
   dlg.el.classList.add('event-card');
+  addReadButton(dlg.el);
   return dlg;
 }
 
@@ -68,5 +70,15 @@ export function showDisasterReport(r) {
     ...body,
     h('div', { class: 'actions' }, h('button', { class: 'btn btn-primary', onclick: () => dlg.close() }, T.ok)),
   ]);
+  addReadButton(dlg.el);
   return dlg;
+}
+
+// 🔊 next to the dialog title.
+function addReadButton(el) {
+  const b = readButton(() => textOf(el));
+  if (!b) return;
+  const title = el.querySelector('h2');
+  title.classList.add('with-read');
+  title.append(b);
 }

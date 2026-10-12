@@ -137,3 +137,17 @@ All numbers are in `js/data/`.
 | Extra Advisor rules | "Lower your prices" (CS < 40 and m̄ > 1.2) and "Start research" (no project), with the 6 rules from section 14. | `data/advisorRules.js` |
 | Suggested budgets | Monopoly 35/15/20/20/10, Singularity 10/40/25/10/15, Utopia 30/15/15/20/20 (Marketing/R&D/Maintenance/Lobbying/PR). | `SUGGESTED_BUDGET` |
 | Debug jumps | `debug/setup` with winMonopoly, winSingularity, winUtopia, loseBankrupt, loseLicense, loseCollapse, endOfTime: 1 month before the end. | `sim/debugSetups.js` |
+
+## Step 12 – Tutorial, accessibility, touch and sound
+
+| Topic | Choice | Where |
+| --- | --- | --- |
+| Sound files | No `.mp3` files: the music (a calm and a tense loop) and the 7 sound effects are made in code with the Web Audio API. Nothing to download or license. | `js/audio/audio.js` |
+| Tense music | Plays for 8 weeks after a warning, a disaster or a rival entry; then the calm loop comes back. | `ui/reactions.js` |
+| Tutorial pause | While a step waits for the player, the clock cannot run (pressing play shakes the tutorial box). Step 5 lets time run until the month 3 line break; step 7 until the monthly report. | `ui/tutorial.js` |
+| Tutorial line break | 30 damage in Home Valley at the start of month 3 (in the sim, so it is the same after a load). | `sim/tick.js` |
+| Tutorial default | On for Easy and Normal, off for Hard (the New Game form follows the difficulty). | `data/difficulty.js` |
+| Report "log only" | The monthly report becomes 1 line in the news log. Click the news bar (or press N) for the log. | `ui/news.js` |
+| Big text | The top bar, news bar and bottom bar grow with the text; the phone tab bar scrolls sideways. At 150% no text is cut. | `css/layout.css`, `ui/barSizes.js` |
+| Phone meters | The meters have their own row, with the Mute button. | `css/components.css` |
+| Color blind | Every color also has an icon, a letter, a pattern or a dash style: ✓ ! ✕ status icons, hatch patterns in map views, L/M/H/C tier letters, A/V rival badges, dashed chart lines. | `render/views.js`, `ui/lineChart.js` |

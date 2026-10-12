@@ -194,9 +194,12 @@ export function mountMapView(area, canvas, { onSelectSector }) {
   }
 
   // ---------- frame loop ----------
+  // Battery saver: draw at 30 frames each second.
+  let skip = false;
   function frame(now) {
     if (!running) return;
-    renderer.draw(getState(), ui, now);
+    skip = !skip;
+    if (!skip || !document.documentElement.classList.contains('battery-saver')) renderer.draw(getState(), ui, now);
     requestAnimationFrame(frame);
   }
 

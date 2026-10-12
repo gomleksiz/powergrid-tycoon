@@ -3,7 +3,7 @@
 
 import { weekTick } from './tick.js';
 import { withStateRng } from '../core/rng.js';
-import { UI, PRICE, BUDGET, TIER_IDS, METERS, REPAIR } from '../data/balance.js';
+import { UI, PRICE, BUDGET, TIER_IDS, METERS, REPAIR, TUTORIAL } from '../data/balance.js';
 import { NODES } from '../data/techTree.js';
 import { refreshAvailable } from './setup.js';
 import { setSplit } from './budget.js';
@@ -36,6 +36,11 @@ export const ACTIONS = {
 
   'tutorial/skip': (state) => {
     state.tutorial.enabled = false;
+  },
+  'tutorial/next': (state) => {
+    if (!state.tutorial.enabled) return;
+    state.tutorial.step += 1;
+    if (state.tutorial.step >= TUTORIAL.STEPS) state.tutorial.enabled = false;
   },
 
   'price/set': (state, { tier, value }) => {

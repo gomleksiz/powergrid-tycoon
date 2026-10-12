@@ -9,8 +9,9 @@ import { dateLabel } from '../core/time.js';
 import { totalCustomers } from '../sim/economy.js';
 import { money, moneyFull, signedMoney, num, numFull } from './format.js';
 import { mountMeters } from './meters.js';
+import { getPrefs } from './prefs.js';
 
-export function mountTopbar(root, { loop, onMenu, onTogglePanel }) {
+export function mountTopbar(root, { loop, onMenu, onTogglePanel, onMute }) {
   const company = h('span', { class: 'company' });
   const date = h('strong');
   const pips = h('span', { class: 'week-pips', 'aria-hidden': 'true' },
@@ -21,6 +22,7 @@ export function mountTopbar(root, { loop, onMenu, onTogglePanel }) {
   const cashBox = h('div', { class: 'stat cash', role: 'group' }, h('span', { 'aria-hidden': 'true' }, '💰'), h('span', { class: 'stack' }, cash, delta));
   const customers = h('span', { class: 'stat customers' });
   const meters = h('div', { class: 'meters', role: 'group', 'aria-label': 'Meters' });
+  const mute = h('button', { class: 'btn mute-btn', onclick: () => onMute?.() });
 
   const speedButtons = TIME.SPEEDS.map((s) => h('button', {
     class: s === 0 ? 'btn' : 'btn speed-n',
@@ -46,8 +48,19 @@ export function mountTopbar(root, { loop, onMenu, onTogglePanel }) {
     meters,
     h('span', { class: 'spacer' }),
     h('div', { class: 'speeds', role: 'group', 'aria-label': 'Speed' }, speedButtons, cycle),
+    mute,
     h('button', { class: 'btn panel-toggle', onclick: onTogglePanel, 'aria-label': T.panel }, '▤'),
   );
+
+  function renderMute() {
+    const m = getPrefs().mute;
+    mute.textContent = m ? '🔇' : '🔊';
+    mute.setAttribute('aria-pressed', String(m));
+    mute.setAttribute('aria-label', m ? T.muteOn : T.muteOff);
+    mute.title = mute.getAttribute('aria-label');
+  }
+  on('prefs:change', renderMute);
+  renderMute();
 
   function renderSpeed(speed) {
     TIME.SPEEDS.forEach((s, i) => {
@@ -83,7 +96,8 @@ export function mountTopbar(root, { loop, onMenu, onTogglePanel }) {
 
   mountMeters(meters);
   subscribe((state) => renderState(state));
-  on('speed:change', renderSpeed);
+  // Read the real speed: another listener may have changed it again (the tutorial pause).
+  on('speed:change', () => renderSpeed(loop.getSpeed()));
   renderSpeed(loop.getSpeed());
   renderState(getState());
 }

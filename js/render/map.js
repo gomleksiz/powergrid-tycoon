@@ -39,7 +39,9 @@ const MIN_HOUSE_SHARE = 0.25;   // a sector always shows some houses
 const FRAME_MS = { water: 700, wind: 140, fusion: 500 };
 
 const motionQuery = window.matchMedia?.('(prefers-reduced-motion: reduce)');
-const reducedMotion = () => motionQuery?.matches || document.body.classList.contains('reduce-motion');
+const reducedMotion = () => motionQuery?.matches
+  || document.documentElement.classList.contains('reduce-motion')
+  || document.documentElement.classList.contains('battery-saver');   // battery saver: no particles
 
 export function createMapRenderer(canvas, camera) {
   const ctx = canvas.getContext('2d');

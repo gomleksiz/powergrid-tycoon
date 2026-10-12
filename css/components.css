@@ -78,7 +78,7 @@ table.data tr.locked { color: var(--c-text-dim); }
   position: absolute;
   left: 12px;
   bottom: 12px;
-  width: min(380px, calc(100% - 24px));
+  width: min(calc(380px * var(--text-scale)), calc(100% - 24px));
   max-height: calc(100% - 24px);
   overflow-y: auto;
   padding: 12px 14px;
@@ -92,7 +92,7 @@ table.data tr.locked { color: var(--c-text-dim); }
 }
 .report-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .report-head h3 { margin: 0; }
-.report-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+.report-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(calc(170px * var(--text-scale)), 1fr)); gap: 0 16px; }
 .rl { display: flex; justify-content: space-between; gap: 8px; }
 .rl .num { font-variant-numeric: tabular-nums; }
 .rl.total { margin: 8px 0; padding-top: 6px; border-top: var(--border); font-weight: 700; font-size: var(--fs); }
@@ -289,10 +289,10 @@ dialog.tree-dlg::backdrop { background: var(--c-bg); }
 }
 /* Phone: the meters get their own row under the date and cash. */
 @media (max-width: 599px) {
-  :root { --topbar-h: 100px; }
-  .topbar { flex-wrap: wrap; align-content: center; row-gap: 4px; }
+  .topbar { align-content: center; }
+  .meter-chip .m-icon { display: none; }
   .meters { order: 10; width: 100%; justify-content: space-between; }
-  .meter-chip { flex: 1; justify-content: center; min-height: 40px; }
+  .meter-chip { flex: 1; justify-content: center; min-height: var(--touch); }
 }
 
 /* ---------- Phase banner ---------- */
@@ -342,3 +342,43 @@ dialog.tree-dlg::backdrop { background: var(--c-bg); }
 .chart-box { border: var(--border); border-radius: var(--radius); background: var(--c-surface); padding: 8px 10px; }
 .chart-box h4 { margin: 0 0 4px; }
 .chart { width: 100%; height: 150px; display: block; }
+
+/* ---------- Tutorial ---------- */
+.tutorial {
+  position: absolute; right: 12px; bottom: 12px; z-index: 10;
+  width: min(380px, calc(100% - 24px));
+  padding: 12px 14px;
+  border: 3px solid var(--c-info); border-radius: 10px;
+  background: rgb(20 27 51 / 0.98); box-shadow: var(--shadow);
+}
+.tutorial p { margin: 6px 0; }
+.tut-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--c-info); }
+.tutorial.nudge { animation: nudge 0.4s; }
+@keyframes nudge { 0%, 100% { transform: none; } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.tut-target { outline: 4px solid var(--c-info) !important; outline-offset: 2px; animation: pulse 1.2s infinite; }
+@keyframes pulse { 50% { outline-color: transparent; } }
+@media (max-width: 599px) {
+  .tutorial { top: 52px; bottom: auto; right: 6px; width: calc(100% - 12px); }
+}
+
+/* ---------- Read aloud, keys, news log, credits, mute ---------- */
+.read-btn { min-width: var(--touch); padding: 0; font-size: 18px; }
+h2.with-read { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.report-head .spacer { flex: 1; }
+kbd { display: inline-block; min-width: 28px; padding: 2px 8px; border: 2px solid var(--c-line); border-bottom-width: 4px; border-radius: 6px; background: var(--c-surface-2); font: inherit; font-weight: 700; text-align: center; }
+.news-log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; max-height: 60dvh; overflow-y: auto; }
+.news-log li { padding: 4px 0; border-bottom: 1px solid var(--c-line); }
+.news-log li.warn { color: var(--c-warn); }
+.news-log li.error { color: var(--c-bad); }
+.newsbar { cursor: pointer; }
+dl.credits dt { font-weight: 700; margin-top: 8px; }
+dl.credits dd { margin: 2px 0 0; color: var(--c-text-dim); }
+.seg.seg2 { grid-template-columns: repeat(2, 1fr); }
+.mute-btn { font-size: 18px; padding: 0; }
+.btn.font-atkinson { font-family: 'Atkinson Hyperlegible', sans-serif; }
+.btn.font-lexend { font-family: 'Lexend', sans-serif; }
+.btn.font-system { font-family: system-ui, sans-serif; }
+@media (max-width: 599px) {
+  .topbar .mute-btn { order: 11; }
+  .topbar .meters { width: calc(100% - 52px); }
+}

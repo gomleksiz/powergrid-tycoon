@@ -2,6 +2,10 @@
 
 import { initSession, newGame, loadGame, quitToTitle, saveToSlot, isActive } from './core/session.js';
 import { on } from './core/bus.js';
+import { getState } from './core/store.js';
+import { T } from './data/text.js';
+import { readContinue } from './save/save.js';
+import { startAudio, setVolumes, sfx } from './audio/audio.js';
 import { mountTopbar } from './ui/topbar.js';
 import { mountSidepanel } from './ui/sidepanel.js';
 import { mountNews } from './ui/news.js';
@@ -10,38 +14,48 @@ import { mountTitle } from './ui/titleScreen.js';
 import { openSaveScreen } from './ui/loadScreen.js';
 import { openPauseMenu } from './ui/pauseMenu.js';
 import { openSettings } from './ui/settings.js';
+import { openCredits } from './ui/credits.js';
 import { mountMapView } from './ui/mapView.js';
-import { createSectorPanel } from './ui/panels/sector.js';
 import { setUi } from './ui/uiState.js';
 import { bindDebugKeys } from './ui/debug.js';
 import { mountReport } from './ui/report.js';
 import { mountPhaseBanner } from './ui/phaseBanner.js';
+import { mountEndScreen, mountLossBanners } from './ui/endScreen.js';
+import { mountTutorial } from './ui/tutorial.js';
+import { bindReactions } from './ui/reactions.js';
+import { alertDialog } from './ui/dialog.js';
+import { openTechTree } from './ui/techTreeView.js';
+import { showEventCard } from './ui/modals.js';
+import { getPrefs, setPrefs } from './ui/prefs.js';
+import { bindPrefs } from './ui/applyPrefs.js';
+import { trackBarSizes } from './ui/barSizes.js';
+import { createSectorPanel } from './ui/panels/sector.js';
 import { createBudgetPanel } from './ui/panels/budget.js';
-import { createCustomersPanel } from './ui/panels/customers.js';
 import { createResearchPanel } from './ui/panels/research.js';
 import { createProjectsPanel } from './ui/panels/projects.js';
 import { createStaffPanel } from './ui/panels/staff.js';
+import { createCustomersPanel } from './ui/panels/customers.js';
 import { createRivalsPanel } from './ui/panels/rivals.js';
 import { createGoalsPanel } from './ui/panels/goals.js';
-import { mountEndScreen, mountLossBanners } from './ui/endScreen.js';
-import { readContinue } from './save/save.js';
-import { alertDialog } from './ui/dialog.js';
-import { openTechTree } from './ui/techTreeView.js';
-import { getPrefs } from './ui/prefs.js';
-import { NODES } from './data/techTree.js';
-import { getState } from './core/store.js';
-import { news } from './core/session.js';
-import { T } from './data/text.js';
-import { showEventCard, showWarning, showDisasterReport } from './ui/modals.js';
 
 const $ = (id) => document.getElementById(id);
 const app = $('app');
 
+bindPrefs();
+trackBarSizes();
 const loop = initSession();
-mountNews($('newsbar'));
+const newsBar = mountNews($('newsbar'));
 
+// ---------- sound: starts on the first New Game or Continue click ----------
+const syncSound = () => { const p = getPrefs(); setVolumes({ music: p.music, effects: p.effects, mute: p.mute }); };
+on('prefs:change', syncSound);
+const withSound = (fn) => (...args) => { startAudio(); syncSound(); return fn(...args); };
+const startGame = withSound(newGame);
+const startLoaded = withSound(loadGame);
+document.addEventListener('click', (e) => { if (e.target.closest('.btn, .tab, .meter-chip')) sfx('click'); }, true);
+
+// ---------- menu ----------
 let pauseMenu = null;
-
 function openMenu() {
   if (pauseMenu?.el.open) return; // the 'close' event comes late, so check .open
   if (map.isPlacing()) { map.cancelPlacing(); return; } // Esc first stops building
@@ -54,7 +68,7 @@ function openMenu() {
       onLoaded: (res, name) => {
         pauseMenu?.keepPaused();
         pauseMenu?.close();
-        loadGame(res, name);
+        startLoaded(res, name);
       },
     }),
     onSettings: () => openSettings({ inGame: true }),
@@ -62,7 +76,7 @@ function openMenu() {
   });
 }
 
-// Tab order from design section 15. More panels join in later steps.
+// ---------- side panel (tab order from design section 15) ----------
 const panel = mountSidepanel({
   panel: $('sidepanel'),
   scrim: $('scrim'),
@@ -78,23 +92,23 @@ const panel = mountSidepanel({
     createGoalsPanel(),
   ],
 });
-
-// The map must be visible to place a building, so the drawer closes on small screens.
 const narrow = () => window.matchMedia('(max-width: 1023px)').matches;
+function showTab(id) {
+  panel.show(id);
+  if (narrow()) panel.open(id);
+}
+// The map must be visible to place a building, so the drawer closes on small screens.
 function startBuild(type) {
   if (narrow()) panel.close();
   map.startPlacing(type);
 }
 
-const map = mountMapView($('map-area'), $('map'), {
-  onSelectSector() {
-    panel.show('sector');
-    if (narrow()) panel.open('sector');
-  },
-});
-mountReport($('map-area'));
+// ---------- map and overlays ----------
+const map = mountMapView($('map-area'), $('map'), { onSelectSector: () => showTab('sector') });
+mountReport($('map-area'), { isEnabled: () => getPrefs().reportMode === 'popup' });
 const phaseBanner = mountPhaseBanner($('map-area'));
 mountLossBanners($('map-area'));
+mountTutorial($('map-area'), { loop, showTab });
 
 const endScreen = mountEndScreen($('screen-root'), {
   onLoadAuto() {
@@ -105,20 +119,24 @@ const endScreen = mountEndScreen($('screen-root'), {
   onLoadSlot: () => openSaveScreen({ mode: 'load', onLoaded: loadGame }),
   onTitle: quitToTitle,
 });
-on('game:end', (e) => {
-  loop.setSpeed(0);
-  endScreen.show(e);
-});
+bindReactions({ loop, endScreen });
 
-mountTopbar($('topbar'), { loop, onMenu: openMenu, onTogglePanel: () => panel.toggle() });
-bindKeys({ loop, isPlaying: isActive, onMenu: openMenu });
+// ---------- top bar and keys ----------
+const toggleMute = () => setPrefs({ mute: !getPrefs().mute });
+mountTopbar($('topbar'), { loop, onMenu: openMenu, onTogglePanel: () => panel.toggle(), onMute: toggleMute });
+bindKeys({
+  loop, isPlaying: isActive, onMenu: openMenu, onTab: showTab,
+  onTree: () => openTechTree(), onNews: () => newsBar.openLog(), onMute: toggleMute,
+});
 bindDebugKeys();
 
+// ---------- title ----------
 const title = mountTitle($('screen-root'), {
-  onNewGame: newGame,
-  onLoaded: loadGame,
-  onOpenLoad: () => openSaveScreen({ mode: 'load', onLoaded: loadGame, onClose: () => title.refresh() }),
+  onNewGame: startGame,
+  onLoaded: startLoaded,
+  onOpenLoad: () => openSaveScreen({ mode: 'load', onLoaded: startLoaded, onClose: () => title.refresh() }),
   onOpenSettings: () => openSettings(),
+  onOpenCredits: () => openCredits(),
 });
 
 on('game:start', () => {
@@ -128,40 +146,11 @@ on('game:start', () => {
   setUi({ selected: null, placing: null, ghost: null, view: 'normal' });
   map.start();
   panel.show('sector');
-  if (getState().time.month === 1 && getState().time.week === 1) phaseBanner.show(1);
   endScreen.hide();
-  if (getState().goals.ended) { endScreen.show(getState().goals.ended); return; }
-  if (getState().events.pending) showEventCard(getState().events.pending.id);   // a card from before the save
-});
-
-// A project is done: a news line, and a pause if the player wants it.
-on('project:done', (p) => {
   const s = getState();
-  if (p.kind === 'research') news(T.news.researchDone({ name: NODES[p.node].name }));
-  else if (p.kind === 'deploy') news(T.news.deployDone({ name: NODES[p.node].name, sector: s.sectors[p.sector].name }));
-  else news(T.news.buildDone({ building: p.type, sector: s.sectors[p.sector].name }));
-  if (getPrefs().autoPauseProject) loop.setSpeed(0);
-});
-
-// Auto-pause on warnings, disasters and event cards (design section 3).
-on('disaster:warning', (w) => {
-  loop.setSpeed(0);
-  news(T.news.warning({ name: T.disasterNames[w.type], weeks: w.weeks }), 'warn');
-  showWarning(w);
-});
-on('disaster:hit', (r) => {
-  loop.setSpeed(0);
-  news(T.news.disaster({ name: T.disasterNames[r.type] }), 'error');
-  showDisasterReport(r);
-});
-on('rival:enter', (e) => {
-  loop.setSpeed(0);
-  news(T.news.rivalEnter(e), 'error');
-});
-on('rival:leave', (e) => news(T.news.rivalLeave(e)));
-on('event:card', ({ id }) => {
-  loop.setSpeed(0);
-  showEventCard(id);
+  if (s.goals.ended) { endScreen.show(s.goals.ended); return; }
+  if (s.time.month === 1 && s.time.week === 1 && !s.tutorial.enabled) phaseBanner.show(1);
+  if (s.events.pending) showEventCard(s.events.pending.id);   // a card from before the save
 });
 
 on('game:quit', () => {

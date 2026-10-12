@@ -26,7 +26,14 @@ npm run sim -- --seed 42 --difficulty normal --months 24   # headless sim, CSV t
 | --- | --- |
 | Space | Pause / play |
 | 1, 2, 3 | Speed 1x, 2x, 5x |
-| Esc | Pause menu |
+| Esc | Pause menu (or stop building) |
+| + / −, arrows | Zoom, move the map |
+| V | Next map view |
+| E B R P S C X G | Tabs: Sector, Budget, Research, Projects, Staff, Customers, Rivals, Goals |
+| T | Tech tree |
+| N | News log |
+| M | Mute |
+| ? | Key list |
 
 ## Folders
 
@@ -69,8 +76,11 @@ The online site is a new origin: saves from `localhost` do not move to it.
 - [x] Step 9 – Disasters and events
 - [x] Step 10 – Rivals
 - [x] Step 11 – Win and lose
-- [ ] Step 12 – Tutorial, accessibility, touch and sound
+- [x] Step 12 – Tutorial, accessibility, touch and sound
+- [ ] Step 13 – Balance
 
 ## Credits
 
-- Font: Atkinson Hyperlegible, © Braille Institute of America, SIL Open Font License 1.1 (`assets/fonts/OFL.txt`).
+- Fonts: Atkinson Hyperlegible (© Braille Institute of America) and Lexend (© The Lexend Project Authors), both SIL Open Font License 1.1 (`assets/fonts/OFL-*.txt`).
+- Pixel art: drawn in code by `tools/make-sprites.js`.
+- Music and sound effects: made in code with the Web Audio API (`js/audio/audio.js`).

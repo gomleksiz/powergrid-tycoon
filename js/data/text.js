@@ -396,6 +396,48 @@ export const T = {
   toTitle: 'Back to the title screen',
   endedNote: 'The game is over. Load a save to play on.',
 
+  // Tutorial
+  tutorialStep: (n, all) => `Tutorial ${n} of ${all}`,
+  skipTutorial: 'Skip the tutorial',
+  next: 'Next',
+  tutorial: {
+    topbar: { text: 'This is the top bar: the date, your cash (and last month + or −), your customers and the 3 meters. Tap a meter to see why it moves. Press Next.' },
+    budget: { text: 'Open the Budget tab and move a budget slider. Marketing brings customers. Maintenance keeps lines healthy.' },
+    price: { text: 'Now change the Low price. A lower price brings customers. A higher price brings money, but customers leave.' },
+    research: { text: 'Open the Research tab and start research on "Targeted Grid Ads". It unlocks Medium customers.' },
+    repair: {
+      before: 'Good! Press ▶ (or Space) to let time run. Something will happen in month 3.',
+      text: 'A line broke in Home Valley! Crews repair it. In the Sector tab, set the repair priority to High.',
+    },
+    hire: { text: 'More technicians repair faster. Open the Staff tab and hire 1 technician.' },
+    report: {
+      before: 'Press ▶ and let a month pass. A monthly report will show.',
+      text: 'This is the monthly report: money in, money out, customers and meters. Read it, then press Next.',
+    },
+    save: { text: 'Last step: save your game. Open the menu (☰ or Esc), choose Save, then Slot 1.' },
+  },
+
+  // Keys and help
+  keysTitle: 'Keys',
+  keyList: [
+    ['Space', 'Pause or play'], ['1, 2, 3', 'Speed 1x, 2x, 5x'], ['Esc', 'Menu (or stop building)'],
+    ['+ / −', 'Zoom in or out'], ['Arrow keys', 'Move the map'], ['V', 'Next map view'],
+    ['E', 'Sector tab'], ['B', 'Budget tab'], ['R', 'Research tab'], ['P', 'Projects tab'], ['S', 'Staff tab'],
+    ['C', 'Customers tab'], ['X', 'Rivals tab'], ['G', 'Goals tab'], ['T', 'Tech tree'], ['N', 'News log'],
+    ['M', 'Mute or unmute'], ['?', 'This list'],
+  ],
+  newsLogTitle: 'News log',
+  newsLogEmpty: 'No news yet.',
+  credits: 'Credits',
+  creditsTitle: 'Credits',
+  creditsList: [
+    ['Game design and code', 'PowerGrid Tycoon, made with plain HTML, CSS and JavaScript.'],
+    ['Font: Atkinson Hyperlegible', '© Braille Institute of America. SIL Open Font License 1.1 (assets/fonts/OFL-AtkinsonHyperlegible.txt).'],
+    ['Font: Lexend', '© The Lexend Project Authors. SIL Open Font License 1.1 (assets/fonts/OFL-Lexend.txt).'],
+    ['Pixel art', 'Drawn in code for this game by tools/make-sprites.js.'],
+    ['Music and sound effects', 'Made in code with the Web Audio API (js/audio/audio.js). No sound files.'],
+  ],
+
   // Monthly report
   reportTitle: (label) => `Report: ${label}`,
   moneyIn: 'Money in',
@@ -413,6 +455,7 @@ export const T = {
   customersLine: (g, l) => `Customers: +${g} new, −${l} left`,
   wholesaleLine: (p) => `Wholesale price: ${p} per kWh`,
   closeReport: 'Close report',
+  reportLog: (date, net, cust) => `${date}: net ${net}, customers ${cust}.`,
   otherCostsLine: (v) => `Also paid (hiring, rush, storm prep, events): ${v}`,
   capexLine: (v) => `Investments this month: ${v}`,
 
@@ -469,6 +512,27 @@ export const T = {
 
   // Settings
   settingsTitle: 'Settings',
+  settingsRead: 'Reading',
+  settingsGame: 'Game',
+  settingsSound: 'Sound',
+  settingsSaves: 'Saves',
+  fontLabel: 'Font',
+  fontNames: { atkinson: 'Atkinson Hyperlegible', lexend: 'Lexend', system: 'System font' },
+  textSize: 'Text size',
+  highContrast: 'High contrast',
+  reduceMotion: 'Reduce motion',
+  reduceMotionHelp: 'Stops moving dots, rain and other animations.',
+  batterySaver: 'Battery saver',
+  batterySaverHelp: 'Draws the map at 30 frames each second, with no moving dots.',
+  autoPauseProject: 'Pause when a project is done',
+  reportMode: 'Monthly report',
+  reportModes: { popup: 'Show a card', log: 'Only in the news log' },
+  musicVolume: 'Music',
+  effectsVolume: 'Effects',
+  mute: 'Mute all sound',
+  readAloud: 'Read aloud',
+  muteOn: 'Sound off. Press M or tap to turn it on.',
+  muteOff: 'Sound on. Press M or tap to turn it off.',
   privateNote: 'Saves stay in this browser on this device. A private or incognito window deletes all saves when you close it.',
   storagePersisted: 'This browser keeps your saves safe from automatic clean-up.',
   storageNotPersisted: 'The browser may delete saves if the device is low on space.',
