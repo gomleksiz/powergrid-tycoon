@@ -1,6 +1,6 @@
 // Sector panel: the selected sector. Type, hazard, customers, buildings, build menu.
 
-import { h, fill } from '../dom.js';
+import { h, fill, fillKeyed } from '../dom.js';
 import { T } from '../../data/text.js';
 import { TIER_IDS } from '../../data/balance.js';
 import { SECTOR_TYPES } from '../../data/sectors.js';
@@ -11,17 +11,27 @@ import { on } from '../../core/bus.js';
 import { getState } from '../../core/store.js';
 import { buildAllowed, capexCost } from '../../sim/build.js';
 import { isTierUnlocked } from '../../sim/effects.js';
-import { money, numFull } from '../format.js';
+import { money, numFull, hours } from '../format.js';
+import { dispatch } from '../../core/store.js';
+import { sectorStatus, capacityMw, peakMw } from '../../sim/grid.js';
+import { REPAIR, TIERS as TIER_DATA } from '../../data/balance.js';
 
 export function createSectorPanel({ onBuild }) {
   const head = h('div', { class: 'sector-head' });
   const info = h('div');
   const customers = h('div');
   const buildings = h('div');
+  const grid = h('div');
+  const prioButtons = REPAIR.PRIORITIES.map((p) => h('button', {
+    class: 'btn', 'aria-pressed': 'false',
+    onclick: () => dispatch({ type: 'sector/priority', payload: { sector: selected(getState()).id, priority: p } }),
+  }, T.priorities[p]));
   const build = h('div', { class: 'build-list' });
 
   const el = h('div', { class: 'panel-body' },
     h('section', { class: 'card' }, head, info),
+    h('section', { class: 'card grid-card' }, h('h3', {}, T.gridTitle), grid,
+      h('h4', {}, T.repairPriority), h('div', { class: 'seg seg3', role: 'group', 'aria-label': T.repairPriority }, prioButtons)),
     h('section', { class: 'card' }, h('h3', {}, T.customersTitle), customers),
     h('section', { class: 'card' }, h('h3', {}, T.buildingsTitle), buildings),
     h('section', { class: 'card build-card' }, h('h3', {}, T.buildTitle), build),
@@ -52,6 +62,28 @@ export function createSectorPanel({ onBuild }) {
         h('td', { class: 'num' }, sec.owned ? numFull(sec.customers[t]) : '–'),
         h('td', { class: 'num' }, numFull(type.potential[t])))))));
 
+    const gridCard = grid.closest('.grid-card');
+    gridCard.hidden = !sec.owned;
+    if (sec.owned) {
+      const st = sectorStatus(sec);
+      const p = sec.lastParts;
+      const limits = TIER_IDS.filter((t) => sec.customers[t] > 0).map((t) => `${T.tierNames[t]} ${hours(TIER_DATA[t].limitH)}`);
+      fill(grid,
+        h('p', { class: `status-line ${st}` }, T.statusIcon[st], ' ', T.statusText[st](hours(sec.lastH))),
+        h('p', { class: 'dim small' }, T.limitsLine(limits.join(' · ') || '–')),
+        meter(T.health, sec.health, 100, sec.health < 40 ? 'bad' : sec.health < 60 ? 'warn' : 'good'),
+        sec.damage > 0 ? meter(T.damage, sec.damage, 100, 'bad') : null,
+        h('table', { class: 'data' }, h('tbody', {},
+          row(T.hParts.wear, hours(p.wear)),
+          row(T.hParts.overload, hours(p.overload)),
+          row(T.hParts.damage, hours(p.damage)),
+          row(T.hParts.shortage, hours(p.shortage)),
+          row(T.hParts.R, `× ${p.R.toFixed(2)}`),
+          row(T.hParts.total, hours(sec.lastH), 'total'))),
+        h('p', { class: 'dim small' }, T.capacityLine(capacityMw(sec).toFixed(1), peakMw(s, sec).toFixed(1))));
+      REPAIR.PRIORITIES.forEach((pr, i) => prioButtons[i].setAttribute('aria-pressed', String(sec.priority === pr)));
+    }
+
     const counts = {};
     for (const b of sec.buildings) counts[b.type] = (counts[b.type] ?? 0) + 1;
     fill(buildings, Object.keys(counts).length
@@ -59,10 +91,11 @@ export function createSectorPanel({ onBuild }) {
       : h('p', { class: 'dim small' }, T.noBuildings));
 
     if (!sec.owned) {
-      fill(build, h('p', { class: 'dim small' }, T.buildNeedsOwned));
+      fillKeyed(build, 'locked', () => h('p', { class: 'dim small' }, T.buildNeedsOwned));
       return;
     }
-    fill(build, BUILDING_IDS.map((id) => {
+    const key = BUILDING_IDS.map((id) => `${buildAllowed(s, id).reason ?? 'ok'}:${capexCost(s, BUILDINGS[id].cost)}`).join('|');
+    fillKeyed(build, key, () => BUILDING_IDS.map((id) => {
       const b = BUILDINGS[id];
       const ok = buildAllowed(s, id);
       const why = ok.ok ? T.buildingInfo[id]
@@ -79,6 +112,18 @@ export function createSectorPanel({ onBuild }) {
       h('span', { class: 'bb-size dim' }, `${b.size}×${b.size}`),
       h('span', { class: 'bb-why dim' }, why));
     }));
+  }
+
+  function meter(label, v, max, cls) {
+    return h('div', { class: 'meter-row' },
+      h('span', {}, label),
+      h('span', { class: 'bar', role: 'meter', 'aria-valuemin': 0, 'aria-valuemax': max, 'aria-valuenow': Math.round(v), 'aria-label': label },
+        h('span', { class: `fill ${cls}`, style: `width:${Math.max(0, Math.min(100, (v / max) * 100))}%` })),
+      h('span', { class: 'num' }, Math.round(v)));
+  }
+
+  function row(label, value, cls = '') {
+    return h('tr', { class: cls }, h('td', {}, label), h('td', { class: 'num' }, value));
   }
 
   on('ui:change', () => { const s = getState(); if (s && !el.hidden) update(s); });

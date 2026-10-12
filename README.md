@@ -62,7 +62,8 @@ The online site is a new origin: saves from `localhost` do not move to it.
 - [x] Step 2 – Save and load
 - [x] Step 3 – Money
 - [x] Step 4 – Map and pixel art
-- [ ] Step 5 – Grid and outages
+- [x] Step 5 – Grid and outages
+- [ ] Step 6 – Staff and tech
 
 ## Credits
 

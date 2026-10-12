@@ -166,3 +166,17 @@ ul.plain { margin: 0; padding-left: 18px; }
   .view-btn .view-name { display: none; }
   .view-bar { gap: 2px; }
 }
+
+/* ---------- Grid card ---------- */
+.status-line { font-weight: 700; }
+.status-line.ok { color: var(--c-good); }
+.status-line.warn { color: var(--c-accent); }
+.status-line.bad { color: var(--c-bad); }
+.meter-row { display: grid; grid-template-columns: 70px 1fr 36px; gap: 8px; align-items: center; margin: 4px 0; font-size: var(--fs-small); }
+.meter-row .num { text-align: right; font-variant-numeric: tabular-nums; }
+.bar { height: 12px; background: var(--c-bg); border: 1px solid var(--c-line); border-radius: 3px; overflow: hidden; }
+.bar .fill { display: block; height: 100%; background: var(--c-good); }
+.bar .fill.warn { background: var(--c-warn); }
+.bar .fill.bad { background: var(--c-bad); }
+table.data tr.total td { font-weight: 700; border-top: 2px solid var(--c-line); }
+.seg3 { grid-template-columns: repeat(3, 1fr); }

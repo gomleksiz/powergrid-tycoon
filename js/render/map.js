@@ -7,6 +7,7 @@ import { TIER_IDS } from '../data/balance.js';
 import { mapgen, TILE, sectorBounds } from '../sim/mapgen.js';
 import { drawSprite, spritesReady } from './sprites.js';
 import { drawViewOverlay, drawViewIcons } from './views.js';
+import { drawPowerLines } from './particles.js';
 
 const T = MAP.TILE;
 
@@ -35,6 +36,9 @@ const HOUSE_SPRITES = {
 };
 const MIN_HOUSE_SHARE = 0.25;   // a sector always shows some houses
 const FRAME_MS = { water: 700, wind: 140, fusion: 500 };
+
+const motionQuery = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+const reducedMotion = () => motionQuery?.matches || document.body.classList.contains('reduce-motion');
 
 export function createMapRenderer(canvas, camera) {
   const ctx = canvas.getContext('2d');
@@ -190,6 +194,7 @@ export function createMapRenderer(canvas, camera) {
     ctx.drawImage(terrain, 0, 0);
     drawWater(map, now);
     drawHouses(state, map);
+    drawPowerLines(ctx, state, now, { particles: !reducedMotion() });
     drawBuildings(state, now);
     drawViewOverlay(ctx, state, ui, now);
     drawLocked(state);

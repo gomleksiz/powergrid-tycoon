@@ -23,3 +23,10 @@ export function fill(el, ...children) {
 }
 
 export const clear = (el) => fill(el);
+
+// Rebuild el only when key changed. Keeps buttons alive between refreshes, so clicks are not lost.
+export function fillKeyed(el, key, make) {
+  if (el.dataset.key === key) return el;
+  el.dataset.key = key;
+  return fill(el, make());
+}

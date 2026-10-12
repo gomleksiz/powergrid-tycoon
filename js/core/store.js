@@ -35,13 +35,14 @@ export function createState(seed, difficulty = DEFAULT_DIFFICULTY, options = {})
       split: { ...BUDGET.START_SPLIT },
       locks: Object.fromEntries(BUDGET.KEYS.map((k) => [k, false])),
     },
-    staff: { ...STAFF.START, wageMult: 1 },
-    market: { walk: 1, eventMult: 1 },
+    staff: { ...STAFF.START, wageMult: 1, repairFirst: true, strikeMonths: 0, hiring: [] },
+    projects: [],
+    market: { walk: 1, eventMult: 1, supplyShare: 1, peakMult: 1 },
     meters: { ...METERS.START },
     sectors,
     tech: createTech(),
     tutorial: { enabled: options.tutorial ?? false, step: 0 },
-    history: { cash: [], customers: [], revenue: [], net: [] },
+    history: { cash: [], customers: [], revenue: [], net: [], outage: [] },
     report: null,
   };
 }

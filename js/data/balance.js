@@ -91,6 +91,30 @@ export const SEASON_OF_MONTH = [
   'summer', 'summer', 'fall', 'fall', 'fall', 'winter',
 ];
 
+// ---------- Grid (section 7) ----------
+
+export const GRID = {
+  WEAR_HOURS: 20,              // H wear = (100 − Health) ÷ 100 × 20 × f line
+  PEAK_HOURS: 120,             // about 4 h a day at the evening peak
+  RED_HOURS: 48,
+  MAINTENANCE_PER_POINT: 2_500,
+  SIZE_BASE: 500,              // Maintenance split: 500 + customers in each sector
+  FAILURE_HEALTH: 40,
+  FAILURE_MAX_CHANCE: 0.6,     // at Health 0
+  FAILURE_DAMAGE: [5, 15],
+  PROSUMER_DAMAGE_CUT: 0.5,
+  VPP_KW_PER_PROSUMER: 0.5,
+  HEATWAVE_PEAK: 1.25,
+  HEATWAVE_SUPPLY: 0.85,
+};
+
+export const REPAIR = {
+  POINTS_PER_TECH_WEEK: 1.5,
+  PRIORITIES: ['high', 'normal', 'low'],
+  STRIKE_MULT: 0.5,
+  BACKLOG_MAX_WEEKS: 99,
+};
+
 // ---------- Staff (section 9) ----------
 
 export const STAFF = {
@@ -104,6 +128,25 @@ export const STAFF = {
   WAGE_MAX: 1.3,
   WAGE_STEP: 0.05,
   MAX_PER_ROLE: 200,
+};
+
+export const WORK = {
+  MIN_EFFICIENCY: 0.35,
+  EFFICIENCY_POWER: 0.8,
+  F_ES_LOW: 0.75,
+  F_ES_HIGH: 1.2,
+  TEAM_SIZE: 3,              // research team = 3 engineers
+  CREW_SIZE: 4,              // field crew = 4 technicians
+  MAX_TEAMS_PER_PROJECT: 3,
+  QUEUE_MAX: 5,
+  RP_PER_ENGINEER: 10,       // per month
+  RD_BASE: 0.75,
+  RD_DIVISOR: 15_000,
+  RD_MAX: 1.5,
+  RUSH_COST_SHARE: 0.5,
+  RUSH_RP_DOLLARS: 50,       // RP projects: original cost = RP × $50
+  RUSH_ES_SHOCK: -5,
+  CRUNCH_MONTHS: 3,
 };
 
 // ---------- Meters (section 11) ----------

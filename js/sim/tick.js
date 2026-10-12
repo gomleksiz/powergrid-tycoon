@@ -5,10 +5,13 @@ import { TIME } from '../data/balance.js';
 import { monthlyMoney, budgetDollars, stepWalk, emergencyLoan, totalCustomers } from './economy.js';
 import { updateCustomers } from './customers.js';
 import { globalEffects } from './effects.js';
+import { calculateGrid, updateHealth, randomFailures, ownEnergy, averageOutage } from './grid.js';
+import { repairWeek } from './repair.js';
 
 export function weekTick(state, rng) {
   const events = [{ type: 'week:end', payload: { ...state.time } }];
   events.push(...advanceConstruction(state));
+  repairWeek(state);
   state.time.week += 1;
   if (state.time.week > TIME.WEEKS_PER_MONTH) {
     state.time.week = 1;
@@ -25,14 +28,25 @@ export function monthTick(state, rng) {
   const budget = budgetDollars(state);
   const start = { cash: state.company.cash, customers: totalCustomers(state), meters: { ...state.meters } };
 
+  // 4. Calculate the grid: outage hours of this month (used by money and customers)
+  const grid = calculateGrid(state);
+
   // 1. Collect money
-  const money = monthlyMoney(state, { capexCredit: state.company.capexThisMonth * fx.capexTaxCredit });
+  const own = ownEnergy(state);
+  const money = monthlyMoney(state, { capexCredit: state.company.capexThisMonth * fx.capexTaxCredit, ownKwh: own.kwh });
   state.company.cash += money.net;
   state.company.lastRevenue = money.revenue;
   state.company.lastNet = money.net;
 
   // Customers come and go
   const customers = updateCustomers(state, rng, { fx, budget, cs: state.meters.cs });
+
+  // Lines get older; Maintenance makes them better. Weak lines can break.
+  updateHealth(state, budget.maintenance);
+  for (const s of randomFailures(state, rng)) {
+    events.push({ type: 'news', payload: { key: 'lineFailure', sector: s.name, kind: 'warn' } });
+  }
+  for (const s of state.sectors) s.dmgHours = 0;
 
   // Wholesale price for next month
   stepWalk(state, rng);
@@ -49,6 +63,7 @@ export function monthTick(state, rng) {
     customers: { start: start.customers, end: totalCustomers(state), ...customers },
     cash: { start: start.cash, end: state.company.cash },
     loan,
+    grid: { avgH: averageOutage(state), peak: grid.totalPeak, gap: grid.gap },
   };
   pushHistory(state, money);
 
@@ -64,6 +79,7 @@ function pushHistory(state, money) {
   h.customers.push(totalCustomers(state));
   h.revenue.push(Math.round(money.revenue));
   h.net.push(Math.round(money.net));
+  h.outage.push(+averageOutage(state).toFixed(2));
 }
 
 // Buildings with a build time (fission, fusion) count down each week.

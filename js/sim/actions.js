@@ -3,7 +3,7 @@
 
 import { weekTick } from './tick.js';
 import { withStateRng } from '../core/rng.js';
-import { UI, PRICE, BUDGET, TIER_IDS, METERS } from '../data/balance.js';
+import { UI, PRICE, BUDGET, TIER_IDS, METERS, REPAIR } from '../data/balance.js';
 import { setSplit } from './budget.js';
 import { takeLoan, repayLoan } from './economy.js';
 import { isTierUnlocked } from './effects.js';
@@ -54,4 +54,19 @@ export const ACTIONS = {
   },
 
   'build/place': (state, { type, x, y }) => placeBuilding(state, type, x, y),
+
+  'sector/priority': (state, { sector, priority }) => {
+    const s = state.sectors[sector];
+    if (s && REPAIR.PRIORITIES.includes(priority)) s.priority = priority;
+  },
+
+  'staff/repairFirst': (state, on) => {
+    state.staff.repairFirst = !!on;
+  },
+
+  // Debug only (the UI sends it with ?debug=1).
+  'debug/damage': (state, { sector, amount }) => {
+    const s = state.sectors[sector];
+    if (s?.owned) s.damage = Math.min(100, s.damage + amount);
+  },
 };

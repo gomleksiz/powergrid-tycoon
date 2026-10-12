@@ -125,6 +125,22 @@ export const T = {
     unknown: 'Unknown building.',
   },
 
+  // Grid (sector panel)
+  gridTitle: 'Grid',
+  health: 'Health',
+  damage: 'Damage',
+  statusIcon: { ok: '✓', warn: '!', bad: '✕' },
+  statusText: {
+    ok: (h) => `Good: ${h} of outages last month.`,
+    warn: (h) => `Warning: ${h} of outages. Some customers are over their limit.`,
+    bad: (h) => `Bad: ${h} of outages. Customers will leave.`,
+  },
+  limitsLine: (list) => `Outage limits: ${list}`,
+  hParts: { wear: 'Old lines', overload: 'Overload at the peak', damage: 'Damage', shortage: 'Power shortage', R: 'Tech cut (R)', total: 'Outage hours' },
+  capacityLine: (cap, peak) => `Capacity ${cap} MW. Evening peak ${peak} MW.`,
+  repairPriority: 'Repair priority',
+  priorities: { high: 'High', normal: 'Normal', low: 'Low' },
+
   // Monthly report
   reportTitle: (label) => `Report: ${label}`,
   moneyIn: 'Money in',
@@ -212,5 +228,6 @@ export const T = {
     emergencyLoan: ({ amount }) => `Cash went below $0. The bank gave an emergency loan of ${amount}.`,
     buildDone: ({ building, sector }) => `The new ${T.buildings[building] ?? building} in ${sector} is ready.`,
     buildFailed: ({ reason }) => T.buildReasons[reason] ?? T.buildReasons.blocked,
+    lineFailure: ({ sector }) => `A worn line broke in ${sector}. Crews will repair it.`,
   },
 };

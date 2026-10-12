@@ -13,6 +13,7 @@ import { openSettings } from './ui/settings.js';
 import { mountMapView } from './ui/mapView.js';
 import { createSectorPanel } from './ui/panels/sector.js';
 import { setUi } from './ui/uiState.js';
+import { bindDebugKeys } from './ui/debug.js';
 import { mountReport } from './ui/report.js';
 import { createBudgetPanel } from './ui/panels/budget.js';
 import { createCustomersPanel } from './ui/panels/customers.js';
@@ -74,6 +75,7 @@ mountReport($('map-area'));
 
 mountTopbar($('topbar'), { loop, onMenu: openMenu, onTogglePanel: () => panel.toggle() });
 bindKeys({ loop, isPlaying: isActive, onMenu: openMenu });
+bindDebugKeys();
 
 const title = mountTitle($('screen-root'), {
   onNewGame: newGame,

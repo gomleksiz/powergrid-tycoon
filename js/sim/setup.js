@@ -20,6 +20,7 @@ export function createSector(def) {
     damage: 0,
     dmgHours: 0,         // damage hours so far this month (section 7)
     lastH: 0,            // outage hours of the last month
+    lastParts: { wear: 0, overload: 0, damage: 0, shortage: 0, R: 1 },
     priority: SECTOR_START.priority,
     discount: 0,         // local price cut 0, 0.1, 0.2, 0.3
     customers: emptyTiers(),

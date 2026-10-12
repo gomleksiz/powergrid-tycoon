@@ -37,3 +37,18 @@ All numbers are in `js/data/`.
 | Build time | Fission and fusion count down their weeks. Field crews join this in step 6. | `sim/tick.js` |
 | Zoom | Whole-number scales only (1×, 2×, 3×, 4×, 5×, 6×, 8×, 10× device pixels per art pixel). | `render/camera.js` |
 | Keys | + / − zoom, arrow keys move the map, V changes the map view, Esc stops building. | `ui/mapView.js` |
+
+## Step 5 – Grid and outages
+
+| Topic | Choice | Where |
+| --- | --- | --- |
+| Maintenance split | "By size" = 500 + customers in each sector. A new empty sector still gets some Maintenance. | `sim/grid.js` `updateHealth` |
+| Random failures | When Health < 40: chance (40 − Health) ÷ 40 × 60% each month to add 5–15 damage. | `randomFailures`, `GRID` in `balance.js` |
+| Week order | Count the damage hours of the week first, then repair. So damage always costs at least 1 week of outages. | `sim/repair.js` |
+| Shortage | The supply gap is for the whole company. Each sector gets 120 × gap ÷ total peak. | `calculateGrid` |
+| Peak help | Wind gives 50% of 1.5 MW at the evening peak; solar gives 0; batteries 2 MW, grid storage 10 MW, fission 25, fusion 80. | `data/buildings.js` |
+| Own energy | Capacity factors: solar 25%, wind 35%, fission and fusion 90%. | `data/buildings.js` |
+| Prosumer cut | In sectors with the Prosumer Program, all damage hours go down by prosumer share × 50%. | `outageParts` |
+| Map colors | Yellow = H is over the limit of a tier that has customers in the sector. | `sectorStatus` |
+| Repair first | On: all free technicians repair while there is damage. Off: crews for waiting deployments are kept free first. | `repairTechnicians` |
+| Debug | With `?debug=1`, the K key adds 25 damage to the selected sector. | `ui/debug.js` |
