@@ -8,13 +8,13 @@ import { globalEffects } from './effects.js';
 import { roundChance } from './customers.js';
 import { averagePrice } from './satisfaction.js';
 import { clampMeter } from './research.js';
-import { emptyTiers } from './setup.js';
+import { emptyTiers, sectorPotential, potentialTotal } from './setup.js';
 import { spendCapex } from './economy.js';
 
 export const enterMonth = (state, id) => diff(state).firstRivalMonth + RIVALS[id].enterAfterFirst;
 
 const sum = (o) => TIER_IDS.reduce((n, t) => n + (o?.[t] ?? 0), 0);
-const potentialOf = (s) => sum(SECTOR_TYPES[s.type].potential);
+const potentialOf = (s) => potentialTotal(s);
 
 // m̄ in one sector (weighted by customers, with the local price cut). Not owned: the player's m̄.
 function sectorPrice(state, s) {
@@ -103,7 +103,7 @@ export function rivalsMonth(state, rng) {
     rv.strength = Math.min(RIVAL.MAX_STRENGTH, rv.strength);
 
     // Customers move to the rival; the rival also wins unserved customers.
-    const pot = SECTOR_TYPES[s.type].potential;
+    const pot = sectorPotential(s);
     for (const t of TIER_IDS) {
       if (!pot[t]) continue;
       if (s.owned && s.customers[t] > 0) {

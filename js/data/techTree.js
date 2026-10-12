@@ -8,7 +8,7 @@
 // effects: read by sim/effects.js (see EFFECT_RULES). sector effects work only
 //   where the node is ACTIVE; anyEffects work everywhere once 1 sector has it.
 
-export const RESEARCH_COST = { 1: 90, 2: 300, 3: 900, 4: 2_400 };
+export const RESEARCH_COST = { 1: 90, 2: 300, 3: 1_200, 4: 4_800 };
 
 export const LEAP = { COST_MULT: 1.6, DEPLOY_MULT: 2 };
 

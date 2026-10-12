@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { createState, setState, getState, dispatch } from '../js/core/store.js';
 import { researchCost, fRD, rpPerTeamMonth, researchSlots, canStartResearch } from '../js/sim/research.js';
 import { globalEffects, sectorEffects, STATUS } from '../js/sim/effects.js';
-import { NODES, NODE_IDS, EFFECT_RULES } from '../js/data/techTree.js';
+import { NODES, NODE_IDS, EFFECT_RULES, RESEARCH_COST, LEAP } from '../js/data/techTree.js';
+import { WORK } from '../js/data/balance.js';
 import { serialize, readSave } from '../js/save/save.js';
 
 const near = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} ≠ ${b}`);
@@ -36,11 +37,11 @@ test('all 33 nodes load from data: every effect key has a rule', () => {
 });
 
 test('research costs by tier, and leapfrog + 60 %', () => {
-  assert.equal(researchCost('P2'), 90);
-  assert.equal(researchCost('D2'), 300);
-  assert.equal(researchCost('D5'), 900);
-  assert.equal(researchCost('D5', true), 1440);
-  assert.equal(researchCost('G5'), 2400);
+  assert.equal(researchCost('P2'), RESEARCH_COST[1]);
+  assert.equal(researchCost('D2'), RESEARCH_COST[2]);
+  assert.equal(researchCost('D5'), RESEARCH_COST[3]);
+  assert.equal(researchCost('D5', true), Math.round(RESEARCH_COST[3] * LEAP.COST_MULT));
+  assert.equal(researchCost('G5'), RESEARCH_COST[4]);
 });
 
 test('F RD and RP for 1 team', () => {
@@ -104,7 +105,7 @@ test('rush: time left − 50 %, ES − 5 at once, crunch for 3 months, 1 time on
   const cash = s.company.cash;
   dispatch({ type: 'project/rush', payload: { id: p.id } });
   near(s.tech.nodes.D2.rp, rpBefore + (300 - rpBefore) / 2);
-  near(s.company.cash, cash - 300 * 50 * 0.5);
+  near(s.company.cash, cash - 300 * WORK.RUSH_RP_DOLLARS * WORK.RUSH_COST_SHARE);
   assert.equal(s.meters.es, 60);
   assert.equal(s.staff.crunch.length, 1);
   const rp2 = s.tech.nodes.D2.rp;
@@ -124,11 +125,11 @@ test('research and deploy Storm Poles in Home Valley', () => {
   assert.ok(weeks > 30 && weeks < 45, `research weeks ${weeks}`);  // 300 RP at ~30 RP a month
   const h = home();
   h.damage = 0;
-  const cash = s.company.cash;
+  const capex = s.company.capexTotal;
   dispatch({ type: 'deploy/start', payload: { node: 'D2', sector: h.id } });
   week();
   assert.equal(h.tech.D2, STATUS.DEPLOYING);
-  assert.ok(s.company.cash <= cash - 25_000);
+  assert.equal(s.company.capexTotal, capex + 25_000);   // the CapEx is paid at the start
   week(6);
   assert.equal(h.tech.D2, STATUS.ACTIVE);
   near(sectorEffects(s, h).fLine, 0.7);
@@ -140,7 +141,7 @@ test('leapfrog: Underground from Overhead Lines costs + 60 %, deploys × 2', () 
   assert.equal(s.tech.nodes.D5.status, STATUS.AVAILABLE);   // open by the leap path
   assert.equal(canStartResearch(s, 'D5').reason, 'needsLeap');
   dispatch({ type: 'research/start', payload: { node: 'D5', leap: true } });
-  assert.equal(s.projects[0].total, 1440);
+  assert.equal(s.projects[0].total, Math.round(RESEARCH_COST[3] * LEAP.COST_MULT));
   assert.equal(s.tech.nodes.D5.leap, true);
 });
 

@@ -6,6 +6,7 @@ import { TIER_IDS, TIERS } from '../../data/balance.js';
 import { SECTOR_TYPES } from '../../data/sectors.js';
 import { customersByTier, totalCustomers, ownedSectors, marketShare } from '../../sim/economy.js';
 import { prosumerShareAll } from '../../sim/prosumers.js';
+import { sectorPotential } from '../../sim/setup.js';
 import { isTierUnlocked } from '../../sim/effects.js';
 import { num, numFull, money, mult, hours, pct } from '../format.js';
 
@@ -37,7 +38,7 @@ export function createCustomersPanel() {
     change.textContent = r ? T.lastMonthChange(num(r.gained), num(r.lost)) : '';
     let pot = 0;
     for (const sec of ownedSectors(s)) {
-      for (const t of TIER_IDS) if (isTierUnlocked(s, t)) pot += SECTOR_TYPES[sec.type].potential[t] ?? 0;
+      for (const t of TIER_IDS) if (isTierUnlocked(s, t)) pot += sectorPotential(sec)[t] ?? 0;
     }
     potential.textContent = T.potentialInfo(numFull(pot));
     share.textContent = T.marketShareLine(pct(marketShare(s), 1));

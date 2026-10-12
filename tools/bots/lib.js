@@ -7,7 +7,7 @@ import { BUILDINGS } from '../../js/data/buildings.js';
 import { SECTOR_TYPES } from '../../js/data/sectors.js';
 import { TIER_IDS, WORK, MONEY } from '../../js/data/balance.js';
 import { STATUS, globalEffects } from '../../js/sim/effects.js';
-import { needsLeap } from '../../js/sim/setup.js';
+import { needsLeap, potentialTotal } from '../../js/sim/setup.js';
 import { canStartResearch, researchProjects } from '../../js/sim/research.js';
 import { canDeploy, fieldProjects } from '../../js/sim/deployment.js';
 import { canOpenSector, openCost } from '../../js/sim/growth.js';
@@ -61,10 +61,10 @@ export function hireTo(role, target, keepMonths = 3) {
 }
 
 // Engineers for `teams` research teams and enough technicians for crews and repair.
-export function staffPlan({ teams = 2, crews = 1, pr = 1, overM = 0 } = {}) {
+export function staffPlan({ teams = 2, crews = 1, pr = 1, overM = 0, backlogCrew = true } = {}) {
   const s = S();
   const M = managementThreshold(s) + overM;
-  const want = { engineers: teams * WORK.TEAM_SIZE, technicians: crews * WORK.CREW_SIZE + (backlogWeeks(s) > 2 ? WORK.CREW_SIZE : 0), pr };
+  const want = { engineers: teams * WORK.TEAM_SIZE, technicians: crews * WORK.CREW_SIZE + (backlogCrew && backlogWeeks(s) > 2 ? WORK.CREW_SIZE : 0), pr };
   const total = Object.values(want).reduce((a, b) => a + b, 0);
   const scale = total > M ? M / total : 1;
   for (const role of ['technicians', 'engineers', 'pr']) hireTo(role, Math.max(role === 'pr' ? 1 : 3, Math.floor(want[role] * scale)));
@@ -125,7 +125,7 @@ export function substations(margin = 0.85) {
   }
 }
 
-const potentialOf = (sec) => TIER_IDS.reduce((n, t) => n + (SECTOR_TYPES[sec.type].potential[t] ?? 0), 0);
+const potentialOf = (sec) => potentialTotal(sec);
 
 // Open the best sector next to ours (most possible customers).
 export function expand({ keepMonths = 1, max = 1 } = {}) {

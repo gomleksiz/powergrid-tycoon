@@ -17,7 +17,8 @@ On a phone on the same Wi-Fi, open `http://<your-PC-IP>:8080`. The phone has its
 
 ```bash
 npm test                                              # node --test
-npm run sim -- --seed 42 --difficulty normal --months 24   # headless sim, CSV to stdout
+npm run sim -- --seed 42 --difficulty normal --bot balanced   # 1 game, CSV to stdout
+node tools/balance.js --seeds 20 --difficulty all             # all 7 bots, balance targets
 ```
 
 ## Keys
@@ -77,7 +78,8 @@ The online site is a new origin: saves from `localhost` do not move to it.
 - [x] Step 10 – Rivals
 - [x] Step 11 – Win and lose
 - [x] Step 12 – Tutorial, accessibility, touch and sound
-- [ ] Step 13 – Balance
+- [x] Step 13 – Balance (bots; playtests with people still to do — see docs/balance-log.md)
+- [ ] Step 14 – Release
 
 ## Credits
 

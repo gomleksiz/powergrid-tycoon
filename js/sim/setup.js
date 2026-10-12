@@ -1,7 +1,7 @@
 // Start values for the sectors and the tech tree of a new game.
 
 import { mapgen, layoutSectors, findFreeSpot } from './mapgen.js';
-import { SECTOR_START, HOME_BUILDINGS } from '../data/sectors.js';
+import { SECTOR_START, HOME_BUILDINGS, SECTOR_TYPES, HOME } from '../data/sectors.js';
 import { BUILDINGS } from '../data/buildings.js';
 import { NODES, NODE_IDS } from '../data/techTree.js';
 import { STATUS } from './effects.js';
@@ -10,11 +10,21 @@ export function emptyTiers() {
   return { low: 0, medium: 0, high: 0, corporate: 0 };
 }
 
+// Possible customers in a sector, for each tier.
+export function sectorPotential(sector) {
+  const base = SECTOR_TYPES[sector.type].potential;
+  if (!sector.home) return base;
+  return Object.fromEntries(Object.entries(base).map(([t, n]) => [t, Math.round(n * HOME.potentialMult)]));
+}
+
+export const potentialTotal = (sector) => Object.values(sectorPotential(sector)).reduce((a, b) => a + b, 0);
+
 export function createSector(def) {
   return {
     id: def.id,
     type: def.type,
     name: def.name,
+    home: !!def.home,
     owned: false,
     health: SECTOR_START.health,
     damage: 0,

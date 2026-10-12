@@ -1,7 +1,7 @@
 // New and lost customers each month (design section 6).
 
 import { TIERS, TIER_IDS, CUSTOMERS } from '../data/balance.js';
-import { SECTOR_TYPES } from '../data/sectors.js';
+import { sectorPotential } from './setup.js';
 
 const ownedCount = (state) => Math.max(1, state.sectors.filter((s) => s.owned).length);
 
@@ -48,7 +48,7 @@ export function updateCustomers(state, rng, ctx) {
 
   for (const s of state.sectors) {
     if (!s.owned) continue;
-    const potential = SECTOR_TYPES[s.type].potential;
+    const potential = sectorPotential(s);
     for (const t of TIER_IDS) {
       if (!ctx.fx.unlockTier.includes(t) || !potential[t]) continue;
       const n = s.customers[t];

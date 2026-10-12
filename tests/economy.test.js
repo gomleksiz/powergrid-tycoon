@@ -4,7 +4,7 @@ import { createState, setState, getState, dispatch } from '../js/core/store.js';
 import { monthlyMoney, wholesalePrice, energyCost, emergencyLoan, upkeep } from '../js/sim/economy.js';
 import { churnRate, fMarketing, fPrice, fCS, newCustomers } from '../js/sim/customers.js';
 import { setSplit, splitSum } from '../js/sim/budget.js';
-import { BUDGET } from '../js/data/balance.js';
+import { BUDGET, TIERS, CUSTOMERS } from '../js/data/balance.js';
 import { createRng } from '../js/core/rng.js';
 
 const near = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} ≠ ${b}`);
@@ -87,7 +87,7 @@ test('churn formula (section 6)', () => {
   // H = 96 is 2 × the Low limit: + 2 % × 1
   near(churnRate('low', { H: 96, m: 1, cs: 60 }), 0.025);
   // Price 1.5×: + 4 % × 0.5
-  near(churnRate('medium', { H: 0, m: 1.5, cs: 60 }), 0.03);
+  near(churnRate('medium', { H: 0, m: 1.5, cs: 60 }), TIERS.medium.baseChurn + 0.02);
   // CS < 30: × 1.5
   near(churnRate('high', { H: 0, m: 1, cs: 20 }), 0.0225);
   // Maximum 25 %
@@ -102,7 +102,7 @@ test('new customer factors', () => {
   near(fPrice(1.5), 0.5);
   near(fCS(60), 1.1);
   near(fCS(80), 1.4);
-  near(newCustomers({ potential: 3000, n: 2000, rival: 0, fM: 1, fP: 1, fC: 1 }), 20);
+  near(newCustomers({ potential: 3000, n: 2000, rival: 0, fM: 1, fP: 1, fC: 1 }), 1000 * CUSTOMERS.NEW_RATE);
 });
 
 test('more marketing brings more customers; a higher price brings more churn', () => {
@@ -119,13 +119,14 @@ test('more marketing brings more customers; a higher price brings more churn', (
   assert.ok(pricey < base, `pricey ${pricey} < base ${base}`);
 });
 
+// Close to break-even: about + $15,000 a month on ~$110,000 of revenue (balance step 13).
 test('with the start sliders the company is close to break-even for 24 months', () => {
   setState(createState(5, 'normal'));
   for (let i = 0; i < 4 * 24; i++) dispatch({ type: 'time/week' });
   const s = getState();
   assert.equal(s.history.net.length, 24);
   const cash = s.company.cash - s.company.debt;
-  assert.ok(cash > 50_000 && cash < 400_000, `cash − debt = ${cash}`);
+  assert.ok(cash > 50_000 && cash < 700_000, `cash − debt = ${cash}`);
 });
 
 test('loans: steps of $50,000 up to the limit; interest 1 % a month', () => {

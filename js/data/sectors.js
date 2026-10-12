@@ -22,7 +22,8 @@ export const SECTOR_TYPES = {
   fault:      { count: 1, potential: { medium: 1_800, high: 540, corporate: 9 }, hazard: { earthquake: 4 } },
 };
 
-export const HOME = { type: 'town', name: 'Home Valley' };
+// Home Valley is the capital: 30 % bigger than other towns (balance step 13).
+export const HOME = { type: 'town', name: 'Home Valley', potentialMult: 1.3 };
 
 // Names are picked with the map seed.
 export const SECTOR_NAMES = {

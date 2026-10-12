@@ -11,6 +11,7 @@ export default makePlayer({
   crews: () => 1,
   pr: () => 1,
   expand: false,
+  backlogCrew: false,
   fight: null,
   event: (id) => (id === 'evChargers' || id === 'university' || id === 'unionRaise' ? 1 : 0),
 });

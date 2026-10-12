@@ -16,6 +16,7 @@ import { dispatch } from '../../core/store.js';
 import { sectorStatus, capacityMw, peakMw } from '../../sim/grid.js';
 import { REPAIR, TIERS as TIER_DATA } from '../../data/balance.js';
 import { canOpenSector, openCost } from '../../sim/growth.js';
+import { sectorPotential } from '../../sim/setup.js';
 import { warningsFor, canPrep, weekIndex } from '../../sim/disasters.js';
 import { DISASTER } from '../../data/disasters.js';
 
@@ -82,10 +83,10 @@ export function createSectorPanel({ onBuild }) {
 
     fill(customers, h('table', { class: 'data' },
       h('thead', {}, h('tr', {}, h('th', {}, T.colTier), h('th', { class: 'num' }, T.colCustomers), h('th', { class: 'num' }, T.colPotential))),
-      h('tbody', {}, TIER_IDS.filter((t) => type.potential[t]).map((t) => h('tr', { class: isTierUnlocked(s, t) ? '' : 'locked' },
+      h('tbody', {}, TIER_IDS.filter((t) => sectorPotential(sec)[t]).map((t) => h('tr', { class: isTierUnlocked(s, t) ? '' : 'locked' },
         h('td', {}, isTierUnlocked(s, t) ? '' : '🔒 ', T.tierNames[t]),
         h('td', { class: 'num' }, sec.owned ? numFull(sec.customers[t]) : '–'),
-        h('td', { class: 'num' }, numFull(type.potential[t])))))));
+        h('td', { class: 'num' }, numFull(sectorPotential(sec)[t])))))));
 
     const gridCard = grid.closest('.grid-card');
     gridCard.hidden = !sec.owned;

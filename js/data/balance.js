@@ -26,7 +26,7 @@ export const TIER_IDS = ['low', 'medium', 'high', 'corporate'];
 
 export const TIERS = {
   low:       { tariff: 50,    kwh: 400,    peakKw: 1.2, limitH: 48,  baseChurn: 0.005, outageK: 0.02 },
-  medium:    { tariff: 120,   kwh: 900,    peakKw: 2.5, limitH: 12,  baseChurn: 0.01,  outageK: 0.05 },
+  medium:    { tariff: 120,   kwh: 900,    peakKw: 2.5, limitH: 12,  baseChurn: 0.012, outageK: 0.05 },
   high:      { tariff: 250,   kwh: 2_500,  peakKw: 8,   limitH: 4,   baseChurn: 0.015, outageK: 0.08 },
   corporate: { tariff: 6_000, kwh: 60_000, peakKw: 120, limitH: 0.5, baseChurn: 0,     outageK: 0 },
 };
@@ -43,8 +43,8 @@ export const HIGH_TIER = {
 export const PRICE = { MIN: 0.6, MAX: 1.5, STEP: 0.05, START: 1.0, LOW_GS_MAX: 1.1 };
 
 export const CUSTOMERS = {
-  NEW_RATE: 0.02,
-  PROSUMER_RATE: 0.008,      // share of non-prosumer homes that add solar each month × F marketing
+  NEW_RATE: 0.016,
+  PROSUMER_RATE: 0.009,      // share of non-prosumer homes that add solar each month × F marketing
   MKT_BASE: 0.5,
   MKT_DIVISOR: 20_000,
   MKT_MAX: 2.0,
@@ -99,7 +99,7 @@ export const GRID = {
   PEAK_HOURS: 120,             // about 4 h a day at the evening peak
   RED_HOURS: 48,
   MAINTENANCE_PER_POINT: 2_500,
-  SIZE_BASE: 500,              // Maintenance split: 500 + customers in each sector
+  SIZE_BASE: 2_000,            // Maintenance split: 2,000 + customers in each sector
   FAILURE_HEALTH: 40,
   FAILURE_MAX_CHANCE: 0.6,     // at Health 0
   FAILURE_DAMAGE: [5, 15],
@@ -146,7 +146,7 @@ export const WORK = {
   RD_DIVISOR: 15_000,
   RD_MAX: 1.5,
   RUSH_COST_SHARE: 0.5,
-  RUSH_RP_DOLLARS: 50,       // RP projects: original cost = RP × $50
+  RUSH_RP_DOLLARS: 500,      // RP projects: original cost = RP × $500 (design: $50; balance step 13)
   RUSH_ES_SHOCK: -5,
   CRUNCH_MONTHS: 3,
 };

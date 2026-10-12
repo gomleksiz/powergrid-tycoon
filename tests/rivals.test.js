@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createState, setState, getState, dispatch } from '../js/core/store.js';
 import { on } from '../js/core/bus.js';
 import { entryScore, unservedShare, buyoutCost, moveCount, enterMonth, rivalsMonth, rivalRevenue } from '../js/sim/rivals.js';
-import { emptyTiers } from '../js/sim/setup.js';
+import { emptyTiers, potentialTotal } from '../js/sim/setup.js';
 import { createRng } from '../js/core/rng.js';
 import { serialize, readSave } from '../js/save/save.js';
 
@@ -18,18 +18,19 @@ function rich(seed, difficulty = 'normal') {
 
 test('entry score = 50 × unserved + 2 × max(0, H − 12) + 30 × (m̄ − 1) + 20 × [CS < 30]', () => {
   const s = createState(1);
-  const h = home(s);                       // Town: 3,000 + 500 possible, 2,000 customers
-  near(unservedShare(h), 1500 / 3500);
+  const h = home(s);                       // 2,000 customers in Home Valley
+  const free = (potentialTotal(h) - 2000) / potentialTotal(h);
+  near(unservedShare(h), free);
   h.lastH = 0;
-  near(entryScore(s, h), 50 * 1500 / 3500);
+  near(entryScore(s, h), 50 * free);
   h.lastH = 30;
   s.prices.low = 1.2;
   s.meters.cs = 20;
-  near(entryScore(s, h), 50 * 1500 / 3500 + 2 * 18 + 30 * 0.2 + 20);
-  const free = s.sectors.find((x) => !x.owned);
+  near(entryScore(s, h), 50 * free + 2 * 18 + 30 * 0.2 + 20);
+  const other = s.sectors.find((x) => !x.owned);
   s.prices.low = 1;
   s.meters.cs = 60;
-  near(entryScore(s, free), 50);
+  near(entryScore(s, other), 50);
 });
 
 test('buyout cost at GS 0, 50 and 100', () => {

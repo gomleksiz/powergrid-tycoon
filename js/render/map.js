@@ -8,6 +8,7 @@ import { mapgen, TILE, sectorBounds } from '../sim/mapgen.js';
 import { drawSprite, spritesReady } from './sprites.js';
 import { drawViewOverlay, drawViewIcons } from './views.js';
 import { drawPowerLines } from './particles.js';
+import { sectorPotential } from '../sim/setup.js';
 import { drawWeather } from './weather.js';
 
 const T = MAP.TILE;
@@ -93,7 +94,7 @@ export function createMapRenderer(canvas, camera) {
 
   function housesFor(sector, map) {
     const plots = map.plots[sector.id];
-    const pot = SECTOR_TYPES[sector.type].potential;
+    const pot = sectorPotential(sector);
     let have = 0;
     let max = 0;
     for (const t of TIER_IDS) { have += sector.customers[t] + (sector.rival?.customers?.[t] ?? 0); max += pot[t] ?? 0; }

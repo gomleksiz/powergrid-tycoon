@@ -7,12 +7,13 @@ import { NODES } from '../data/techTree.js';
 import { diff } from '../data/difficulty.js';
 import { VICTORY, LOSS } from '../data/advisorRules.js';
 import { STATUS } from './effects.js';
+import { sectorPotential } from './setup.js';
 
 function ownAll(state) {
   for (const s of state.sectors) {
     s.owned = true;
     s.rival = null;
-    for (const t of TIER_IDS) s.customers[t] = SECTOR_TYPES[s.type].potential[t] ?? 0;
+    for (const t of TIER_IDS) s.customers[t] = sectorPotential(s)[t] ?? 0;
   }
 }
 

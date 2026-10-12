@@ -34,13 +34,14 @@ export function makePlayer(cfg) {
       const s = L.S();
       const m = s.time.month;
       L.manageLoans();
-      L.staffPlan({ teams: c.teams(m), crews: c.crews(m, L.owned().length), pr: c.pr(m) });
+      L.staffPlan({ teams: c.teams(m), crews: c.crews(m, L.owned().length), pr: c.pr(m), backlogCrew: c.backlogCrew ?? true });
       L.research(L.nextOpen(c.research), { teams: 3 });
       L.deployAll(c.deploy);
       L.activateOneTime();
       if (c.expand) L.expand();
       L.substations();
       c.builds(m);
+      c.extra?.(m);
       if (c.fight) L.fightRivals(c.fight);
       if (c.rush) for (const p of s.projects) if (!p.rushed && p.status === 'active' && L.canSpend(50_000, 3)) L.act('project/rush', { id: p.id });
       L.repairPriority();

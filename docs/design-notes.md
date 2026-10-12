@@ -151,3 +151,7 @@ All numbers are in `js/data/`.
 | Big text | The top bar, news bar and bottom bar grow with the text; the phone tab bar scrolls sideways. At 150% no text is cut. | `css/layout.css`, `ui/barSizes.js` |
 | Phone meters | The meters have their own row, with the Mute button. | `css/components.css` |
 | Color blind | Every color also has an icon, a letter, a pattern or a dash style: ✓ ! ✕ status icons, hatch patterns in map views, L/M/H/C tier letters, A/V rival badges, dashed chart lines. | `render/views.js`, `ui/lineChart.js` |
+
+## Step 13 – Balance
+
+All number changes and their reasons are in `docs/balance-log.md`. The 1 rule change: the marketing budget is spread over the owned sectors in the new-customer and prosumer formulas.

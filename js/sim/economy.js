@@ -2,7 +2,7 @@
 
 import { TIERS, TIER_IDS, MONEY, WHOLESALE, SEASON_OF_MONTH, STAFF, BUDGET, METERS } from '../data/balance.js';
 import { BUILDINGS } from '../data/buildings.js';
-import { SECTOR_TYPES } from '../data/sectors.js';
+import { potentialTotal } from './setup.js';
 import { diff } from '../data/difficulty.js';
 
 export const seasonOf = (month) => SEASON_OF_MONTH[(month - 1) % 12];
@@ -29,7 +29,7 @@ export function totalCustomers(state) {
 // All possible customers in the 12 sectors.
 export function totalPotential(state) {
   let n = 0;
-  for (const s of state.sectors) for (const t of TIER_IDS) n += SECTOR_TYPES[s.type].potential[t] ?? 0;
+  for (const s of state.sectors) n += potentialTotal(s);
   return n;
 }
 

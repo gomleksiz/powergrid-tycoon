@@ -6,6 +6,8 @@ import { canOpenSector, openSector, withheldHigh, corporateContracts, currentPha
 import { updateProsumers } from '../js/sim/prosumers.js';
 import { neighbors } from '../js/sim/mapgen.js';
 import { marketShare, totalPotential } from '../js/sim/economy.js';
+import { potentialTotal } from '../js/sim/setup.js';
+import { CUSTOMERS } from '../js/data/balance.js';
 import { globalEffects } from '../js/sim/effects.js';
 import { createRng } from '../js/core/rng.js';
 import { on } from '../js/core/bus.js';
@@ -109,14 +111,14 @@ test('a long outage in a Corporate sector can end a contract (full month tick)',
   assert.ok(s.report.money.penalties > 0);
 });
 
-test('prosumers: 2 % × F marketing join each month where the program is active', () => {
+test('prosumers: PROSUMER_RATE × F marketing join each month where the program is active', () => {
   const s = createState(6);
   const h = home(s);
   h.tech.P5 = 'ACTIVE';
   const g = globalEffects(s);
   const n = updateProsumers(s, createRng(3), 4_000, g);
-  // 2000 homes × 0.02 × 0.77 ≈ 30.8
-  assert.ok(n >= 30 && n <= 31, `${n}`);
+  const expected = 2000 * CUSTOMERS.PROSUMER_RATE * 0.77;   // 1 sector, $4,000 marketing, 1 PR
+  assert.ok(Math.abs(n - expected) <= 1, `${n} vs ${expected}`);
   assert.equal(h.prosumers, n);
   h.customers.low = 10;
   updateProsumers(s, createRng(3), 4_000, g);
@@ -125,8 +127,10 @@ test('prosumers: 2 % × F marketing join each month where the program is active'
 
 test('market share = customers ÷ all possible customers in 12 sectors', () => {
   const s = createState(7);
-  assert.equal(totalPotential(s), 29_565);
-  assert.equal(marketShare(s), 2000 / 29_565);
+  const all = s.sectors.reduce((n, x) => n + potentialTotal(x), 0);
+  assert.equal(totalPotential(s), all);
+  assert.equal(marketShare(s), 2000 / all);
+  assert.ok(all > 30_000, 'section 18 asks for more than 30,000 customers at month 180');
 });
 
 test('Medium, High and Corporate tiers open with their techs', () => {
