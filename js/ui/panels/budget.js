@@ -4,14 +4,15 @@ import { h } from '../dom.js';
 import { createSlider } from '../slider.js';
 import { confirmDialog } from '../dialog.js';
 import { T } from '../../data/text.js';
-import { BUDGET, PRICE, TIER_IDS, TIERS, MONEY } from '../../data/balance.js';
+import { BUDGET, PRICE, TIER_IDS, TIERS, MONEY, REGION } from '../../data/balance.js';
 import { NODES } from '../../data/techTree.js';
 import { diff } from '../../data/difficulty.js';
 import { dispatch, getState } from '../../core/store.js';
-import { budgetDollars, budgetBase, canTakeLoan, canRepay, loanLimit, interest } from '../../sim/economy.js';
+import { budgetDollars, budgetBase, canTakeLoan, canRepay, loanLimit, interest, wholesalePrice, govPrice, demandKwh } from '../../sim/economy.js';
+import { ownEnergy, ownPeakMw } from '../../sim/grid.js';
 import { isTierUnlocked } from '../../sim/effects.js';
 import { maxPrice } from '../../sim/actions.js';
-import { money, moneyFull, mult } from '../format.js';
+import { money, moneyFull, mult, energy } from '../format.js';
 
 const RISKY_PRICE = 1.2;
 
@@ -41,6 +42,18 @@ export function createBudgetPanel() {
     });
   }
 
+  // Energy market (version 1.1)
+  const shortage = h('p', { class: 'small' });
+  const wholesale = h('p', { class: 'small' });
+  const gov = h('p', { class: 'small' });
+  const ownLine = h('p', { class: 'small' });
+  const peakLine = h('p', { class: 'dim small' });
+  const lastSale = h('p', { class: 'small' });
+  const share = createSlider({
+    label: T.govShareSlider, min: 0, max: 1, step: REGION.SHARE_STEP,
+    onChange: (v) => dispatch({ type: 'govt/share', payload: v }),
+  });
+
   const loanText = h('p', { class: 'small' });
   const interestText = h('p', { class: 'dim small' });
   const take = h('button', { class: 'btn', onclick: () => dispatch({ type: 'loan/take' }) }, T.takeLoan(money(MONEY.LOAN_STEP)));
@@ -58,6 +71,13 @@ export function createBudgetPanel() {
       h('h3', {}, T.pricesTitle),
       h('p', { class: 'dim small' }, T.pricesHelp),
       TIER_IDS.map((t) => prices[t].el),
+    ),
+    h('section', { class: 'card' },
+      h('h3', {}, T.energyTitle),
+      shortage, wholesale, gov, ownLine, peakLine, lastSale,
+      share.el,
+      h('p', { class: 'dim small' }, T.govShareHelp),
+      h('p', { class: 'dim small' }, T.regionOutlook),
     ),
     h('section', { class: 'card' },
       h('h3', {}, T.loansTitle),
@@ -100,6 +120,18 @@ export function createBudgetPanel() {
         noteText: !open ? T.tierLocked(tierTech(t)) : (cap < PRICE.MAX ? T.priceCapped : ''),
       });
     }
+    const short = s.market.shortage ?? 0;
+    shortage.textContent = T.shortageLine(Math.round(short * 100));
+    shortage.className = `small ${short > 0 ? 'warn' : 'good'}`;
+    const w = wholesalePrice(s);
+    wholesale.textContent = T.wholesaleNow(`$${w.toFixed(3)}`);
+    gov.textContent = T.govPriceLine(`$${govPrice(s).toFixed(3)}`, (govPrice(s) / w).toFixed(2));
+    ownLine.textContent = T.ownPowerLine(energy(ownEnergy(s).kwh), energy(demandKwh(s)));
+    peakLine.textContent = T.ownPeakLine(ownPeakMw(s).toFixed(1));
+    lastSale.hidden = !(s.govtSale.lastIncome > 0);
+    lastSale.textContent = T.lastSaleLine(energy(s.report?.region?.soldKwh ?? 0), money(s.govtSale.lastIncome));
+    share.set(s.govtSale.share, { text: `${Math.round(s.govtSale.share * 100)}%` });
+
     loanText.textContent = T.loanInfo(moneyFull(s.company.debt), moneyFull(loanLimit(s)));
     interestText.textContent = T.loanInterest(moneyFull(interest(s)));
     take.disabled = !canTakeLoan(s);

@@ -3,13 +3,15 @@
 
 import { weekTick } from './tick.js';
 import { withStateRng } from '../core/rng.js';
-import { UI, PRICE, BUDGET, TIER_IDS, METERS, REPAIR, TUTORIAL } from '../data/balance.js';
+import { UI, PRICE, BUDGET, TIER_IDS, METERS, REPAIR, TUTORIAL, REGION } from '../data/balance.js';
 import { NODES } from '../data/techTree.js';
 import { refreshAvailable } from './setup.js';
 import { setSplit } from './budget.js';
 import { takeLoan, repayLoan } from './economy.js';
 import { isTierUnlocked } from './effects.js';
-import { placeBuilding } from './build.js';
+import { placeBuilding, upgradeBuilding } from './build.js';
+import { hireOffice, closeOffice, scheduleAll } from './offices.js';
+import { startCampaign, stopCampaign } from './marketing.js';
 import { startResearch, cancelResearch, clampTeams, scheduleResearch } from './research.js';
 import { startDeploy, cancelField, activateOneTime } from './deployment.js';
 import { hire, fire, setWage, rush } from './staffing.js';
@@ -70,6 +72,21 @@ export const ACTIONS = {
   },
 
   'build/place': (state, { type, x, y }) => placeBuilding(state, type, x, y),
+  'building/upgrade': (state, { id }) => upgradeBuilding(state, id),
+
+  // Version 1.1: offices, "Schedule all", campaigns and selling power to the government.
+  'office/hire': (state, id) => (hireOffice(state, id) ? [{ type: 'news', payload: { key: 'officeHired', office: id } }] : []),
+  'office/close': (state, id) => { closeOffice(state, id); },
+  'manager/auto': (state, { key, on }) => {
+    if (key === 'autoResearch' || key === 'autoDeploy') state.offices.manager[key] = !!on;
+  },
+  'projects/scheduleAll': (state) => [{ type: 'news', payload: { key: 'scheduledAll', count: scheduleAll(state) } }],
+  'campaign/start': (state, opts) => (startCampaign(state, opts)
+    ? [{ type: 'news', payload: { key: 'campaignStart', cut: Math.round(opts.cut * 100), months: opts.months } }] : []),
+  'campaign/stop': (state, { id }) => { stopCampaign(state, id); },
+  'govt/share': (state, value) => {
+    state.govtSale.share = +clamp(roundStep(Number(value) || 0, REGION.SHARE_STEP), 0, 1).toFixed(2);
+  },
 
   'sector/open': (state, { sector }) => {
     if (openSector(state, sector)) return [{ type: 'news', payload: { key: 'sectorOpened', sector: state.sectors[sector].name } }];

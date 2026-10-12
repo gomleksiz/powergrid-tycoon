@@ -1,12 +1,14 @@
 // Growth: phases, opening sectors, the High and Corporate tier rules (design sections 3, 5 and 6).
 
-import { TIERS, CORPORATE, HIGH_TIER } from '../data/balance.js';
+import { TIERS, CORPORATE, HIGH_TIER, GROWTH, TIER_IDS, TIME } from '../data/balance.js';
 import { PHASES, phaseOf } from '../data/phases.js';
 import { SECTOR_START, NEW_SECTOR_BUILDINGS } from '../data/sectors.js';
 import { BUILDINGS } from '../data/buildings.js';
 import { neighbors, mapgen, findFreeSpot } from './mapgen.js';
+import { potentialTotal } from './setup.js';
 import { sectorEffects } from './effects.js';
 import { spendCapex, capexCost } from './economy.js';
+import { priceCut } from './marketing.js';
 
 export const currentPhase = (state) => phaseOf(state.time.month);
 export const ownedCount = (state) => state.sectors.filter((s) => s.owned).length;
@@ -53,7 +55,7 @@ export function withheldHigh(state) {
   let sum = 0;
   for (const s of state.sectors) {
     if (!s.owned || s.customers.high <= 0 || s.lastH <= TIERS.high.limitH) continue;
-    const bill = s.customers.high * TIERS.high.tariff * state.prices.high * (1 - s.discount);
+    const bill = s.customers.high * TIERS.high.tariff * state.prices.high * (1 - priceCut(state, s));
     sum += bill * HIGH_TIER.WITHHOLD_SHARE * sectorEffects(state, s).withheldHighMult;
   }
   return sum;
@@ -73,6 +75,23 @@ export function corporateContracts(state, rng) {
     out.sectors.push({ name: s.name, lost });
   }
   return out;
+}
+
+// Version 1.1: more homes and firms each year. Sets sector.growth for the month.
+export function growthAt(month) {
+  const y = Math.max(0, month - GROWTH.START_MONTH) / TIME.MONTHS_PER_YEAR;
+  return Object.fromEntries(TIER_IDS.map((t) => [t, (1 + GROWTH.POTENTIAL_YEAR[t]) ** y]));
+}
+
+// The month step. Each December: news with the number of new possible customers.
+export function growRegion(state, nextMonth) {
+  const g = growthAt(nextMonth);
+  for (const s of state.sectors) s.growth = { ...g };
+  if ((nextMonth - 1) % TIME.MONTHS_PER_YEAR !== 0) return [];
+  const yearAgo = growthAt(nextMonth - TIME.MONTHS_PER_YEAR);
+  const total = (growth) => state.sectors.reduce((n, s) => n + potentialTotal({ ...s, growth }), 0);
+  const count = total(g) - total(yearAgo);
+  return count > 0 ? [{ type: 'news', payload: { key: 'regionGrew', count } }] : [];
 }
 
 // A new phase starts at a fixed month. Returns events.

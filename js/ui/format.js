@@ -33,6 +33,13 @@ export const pct = (v, digits = 0) => `${(v * 100).toFixed(digits)}%`;
 export const mult = (v) => `${v.toFixed(2)}×`;
 export const hours = (h) => (h < 10 ? `${h.toFixed(1)} h` : `${Math.round(h)} h`);
 
+// kWh → "350 MWh" or "1.2 GWh".
+export function energy(kwh) {
+  if (kwh >= 1e6) return `${trim(kwh / 1e6)} GWh`;
+  if (kwh >= 1e3) return `${trim(kwh / 1e3)} MWh`;
+  return `${full.format(kwh)} kWh`;
+}
+
 function trim(x) {
   return x >= 100 ? x.toFixed(0) : x.toFixed(1).replace(/\.0$/, '');
 }

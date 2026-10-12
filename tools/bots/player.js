@@ -18,6 +18,7 @@ export function makePlayer(cfg) {
     rush: false,
     builds: () => {},
     path: null,
+    power: true,           // version 1.1: own peak power for the regional shortage
     event: () => 0,
     ...cfg,
   };
@@ -41,8 +42,10 @@ export function makePlayer(cfg) {
       if (c.expand) L.expand();
       L.substations();
       c.builds(m);
+      if (c.power) L.ownPower();
       c.extra?.(m);
       if (c.fight) L.fightRivals(c.fight);
+      if (c.campaign) L.campaign(c.campaign);
       if (c.rush) for (const p of s.projects) if (!p.rushed && p.status === 'active' && L.canSpend(50_000, 3)) L.act('project/rush', { id: p.id });
       L.repairPriority();
       if (m % 12 === 0) L.setPrices(c.price);

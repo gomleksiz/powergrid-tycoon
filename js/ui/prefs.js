@@ -4,7 +4,7 @@ import { SAVE } from '../data/balance.js';
 import { emit } from '../core/bus.js';
 
 export const DEFAULT_PREFS = {
-  autoPauseProject: true,
+  pauseOnProject: false,   // version 1.1: the game runs on when a project is done
   reportMode: 'popup',     // popup | log
   font: 'atkinson',        // atkinson | lexend | system
   textSize: 100,           // 90–150 %

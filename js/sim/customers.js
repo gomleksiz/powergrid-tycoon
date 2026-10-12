@@ -2,6 +2,7 @@
 
 import { TIERS, TIER_IDS, CUSTOMERS } from '../data/balance.js';
 import { sectorPotential } from './setup.js';
+import { effectivePrice, campaignBuzz } from './marketing.js';
 
 const ownedCount = (state) => Math.max(1, state.sectors.filter((s) => s.owned).length);
 
@@ -49,12 +50,14 @@ export function updateCustomers(state, rng, ctx) {
   for (const s of state.sectors) {
     if (!s.owned) continue;
     const potential = sectorPotential(s);
+    const buzz = campaignBuzz(state, s);
     for (const t of TIER_IDS) {
       if (!ctx.fx.unlockTier.includes(t) || !potential[t]) continue;
       const n = s.customers[t];
       const rival = s.rival?.customers?.[t] ?? 0;
-      const m = state.prices[t];
-      const gained = roundChance(newCustomers({ potential: potential[t], n, rival, fM, fP: fPrice(m), fC }), rng);
+      // The price after a local cut or a campaign (version 1.1).
+      const m = effectivePrice(state, s, t);
+      const gained = roundChance(newCustomers({ potential: potential[t], n, rival, fM: fM * buzz, fP: fPrice(m), fC }), rng);
       // Corporate customers leave only by the contract rule (sim/growth.js).
       const lost = t === 'corporate' ? 0 : roundChance(n * churnRate(t, { H: s.lastH, m, cs: ctx.cs }), rng);
       const next = Math.max(0, Math.min(potential[t] - rival, n + gained - lost));

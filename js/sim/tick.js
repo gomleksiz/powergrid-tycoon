@@ -12,11 +12,13 @@ import { deployWeek } from './deployment.js';
 import { staffArrive, monthStaff } from './staffing.js';
 import { updateMeters } from './satisfaction.js';
 import { marketShare } from './economy.js';
-import { withheldHigh, corporateContracts, checkPhase } from './growth.js';
+import { withheldHigh, corporateContracts, checkPhase, growRegion } from './growth.js';
 import { updateProsumers } from './prosumers.js';
 import { disasterWeek, rollDisasters, monthDisasters } from './disasters.js';
 import { rollEventCard } from './eventCards.js';
-import { tickMods } from './market.js';
+import { tickMods, updateRegion } from './market.js';
+import { campaignsMonth } from './marketing.js';
+import { managerWeek, watchWeek } from './offices.js';
 import { rivalsMonth } from './rivals.js';
 import { checkEnd } from './victory.js';
 import { DISASTER } from '../data/disasters.js';
@@ -24,10 +26,12 @@ import { DISASTER } from '../data/disasters.js';
 export function weekTick(state, rng) {
   const events = [{ type: 'week:end', payload: { ...state.time } }];
   events.push(...staffArrive(state));
+  managerWeek(state);
   events.push(...disasterWeek(state));
   for (const id of researchWeek(state)) events.push({ type: 'project:done', payload: { kind: 'research', node: id } });
   for (const p of deployWeek(state)) events.push({ type: 'project:done', payload: { kind: p.kind, node: p.node, type: p.type, sector: p.sector } });
   repairWeek(state);
+  events.push(...watchWeek(state));
   state.time.week += 1;
   if (state.time.week > TIME.WEEKS_PER_MONTH) {
     state.time.week = 1;
@@ -43,6 +47,8 @@ export function monthTick(state, rng) {
   const fx = globalEffects(state);
   const budget = budgetDollars(state);
   const start = { cash: state.company.cash, customers: totalCustomers(state), meters: { ...state.meters } };
+
+  const shortageThisMonth = state.market.shortage ?? 0;
 
   // 4. Calculate the grid: outage hours of this month (used by money and customers)
   const grid = calculateGrid(state);
@@ -64,6 +70,8 @@ export function monthTick(state, rng) {
   state.company.cash += money.net;
   state.company.lastRevenue = money.revenue;
   state.company.lastNet = money.net;
+  state.govtSale.lastKwh = state.market.shortage > 0 ? money.soldKwh : 0;
+  state.govtSale.lastIncome = money.sales;
 
   // Customers come and go
   const customers = updateCustomers(state, rng, { fx, budget, cs: state.meters.cs });
@@ -85,13 +93,16 @@ export function monthTick(state, rng) {
   // 6. Outside events: disasters for 2 months later, event cards
   tickMods(state);
   events.push(...rivalsMonth(state, rng));
+  events.push(...campaignsMonth(state));
   monthDisasters(state);
   rollDisasters(state, rng, month + DISASTER.SCHEDULE_AHEAD);
   events.push(...rollEventCard(state, rng));
   for (const s of state.sectors) s.dmgHours = 0;
 
-  // Wholesale price for next month
+  // Wholesale price and the regional shortage for next month
   stepWalk(state, rng);
+  events.push(...updateRegion(state, rng));
+  events.push(...growRegion(state, month + 1));
 
   // Emergency loan when cash < $0
   const loan = emergencyLoan(state);
@@ -106,6 +117,7 @@ export function monthTick(state, rng) {
     cash: { start: start.cash, end: state.company.cash },
     loan,
     grid: { avgH: averageOutage(state), peak: grid.totalPeak, gap: grid.gap },
+    region: { shortage: shortageThisMonth, soldKwh: money.soldKwh, sales: money.sales, govPrice: money.govPrice },
     meters: { before: meters.before, after: meters.after, reasons: meters.reasons },
   };
   pushHistory(state, money);

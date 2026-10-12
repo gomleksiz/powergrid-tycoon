@@ -13,8 +13,11 @@ import { canDeploy, fieldProjects } from '../../js/sim/deployment.js';
 import { canOpenSector, openCost } from '../../js/sim/growth.js';
 import { mapgen, findFreeSpot } from '../../js/sim/mapgen.js';
 import { buildAllowed, capexCost } from '../../js/sim/build.js';
-import { capacityMw, peakMw } from '../../js/sim/grid.js';
-import { wages, upkeep, interest, budgetDollars, canTakeLoan } from '../../js/sim/economy.js';
+import { capacityMw, peakMw, ownPeakMw } from '../../js/sim/grid.js';
+import { shortageAt } from '../../js/sim/market.js';
+import { canUpgrade, upgradeCost } from '../../js/sim/build.js';
+import { wages, upkeep, interest, budgetDollars, canTakeLoan, marketShare } from '../../js/sim/economy.js';
+import { diff } from '../../js/data/difficulty.js';
 import { totalStaff, managementThreshold } from '../../js/sim/workforce.js';
 import { backlogWeeks } from '../../js/sim/repair.js';
 import { buyoutCost, canMonopoly } from '../../js/sim/rivals.js';
@@ -127,6 +130,27 @@ export function substations(margin = 0.85) {
 
 const potentialOf = (sec) => potentialTotal(sec);
 
+// Version 1.1: own peak power for the regional shortage. The bot looks 6 months ahead
+// (as a player reads the Energy market card) and adds batteries, storage or upgrades.
+export function ownPower({ ahead = 6, margin = 0.03, maxSteps = 3 } = {}) {
+  const s = S();
+  const want = () => {
+    const peak = owned().reduce((n, sec) => n + peakMw(s, sec), 0);
+    return peak * (Math.max(s.market.shortage, shortageAt(s.time.month + ahead)) + margin);
+  };
+  for (let step = 0; step < maxSteps && ownPeakMw(s) < want(); step++) {
+    let done = false;
+    for (const type of ['storage', 'battery']) {
+      for (const sec of owned()) if (!done && build(type, sec.id)) done = true;
+    }
+    if (done) continue;
+    const up = owned().flatMap((sec) => sec.buildings).filter((b) => ['battery', 'storage', 'fission', 'fusion'].includes(b.type) && canUpgrade(s, b.id).ok)
+      .sort((a, b) => upgradeCost(s, a) - upgradeCost(s, b))[0];
+    if (!up || !canSpend(upgradeCost(s, up))) return;
+    act('building/upgrade', { id: up.id });
+  }
+}
+
 // Open the best sector next to ours (most possible customers).
 export function expand({ keepMonths = 1, max = 1 } = {}) {
   let opened = 0;
@@ -157,6 +181,16 @@ export function fightRivals({ buyout = true, cut = 0.1, franchise = true, monopo
     if (buyout && canSpend(buyoutCost(s, sec), 4)) act('rival/buyout', { sector: sec.id });
     else if (cut) act('sector/discount', { sector: sec.id, discount: cut });
   }
+}
+
+// Version 1.1: a company-wide price campaign (Marketing department) to win market share.
+// It runs only while the market share is below the Monopoly share (+ a small margin).
+export function campaign({ from = 150, cut = 0.1, months = 12, keepMonths = 6, margin = 0.01 } = {}) {
+  const s = S();
+  if (s.time.month < from || marketShare(s) >= diff(s).victoryShare + margin) return;
+  if (!s.offices.marketing.hired && canSpend(40_000, keepMonths)) act('office/hire', 'marketing');
+  if (!s.offices.marketing.hired || s.campaigns.some((c) => c.sector === null)) return;
+  if (canSpend(15_000 * owned().length, keepMonths)) act('campaign/start', { cut, months, sector: null });
 }
 
 export function stormPrep() {

@@ -1,6 +1,10 @@
 // Customers panel: customers, price and bill for each tier.
 
-import { h, fill } from '../dom.js';
+import { h, fill, fillKeyed } from '../dom.js';
+import { dispatch } from '../../core/store.js';
+import { CAMPAIGN } from '../../data/offices.js';
+import { canStartCampaign, campaignCost } from '../../sim/marketing.js';
+import { sectorRevenue } from '../../sim/economy.js';
 import { T } from '../../data/text.js';
 import { TIER_IDS, TIERS } from '../../data/balance.js';
 import { SECTOR_TYPES } from '../../data/sectors.js';
@@ -18,6 +22,27 @@ export function createCustomersPanel() {
   const pros = h('p', { class: 'small' });
   const rows = h('tbody');
 
+  // Marketing campaigns (version 1.1)
+  const pick = { cut: CAMPAIGN.CUTS[1], months: CAMPAIGN.MONTHS[1], sector: null };
+  const seg = (values, key, text) => h('div', { class: `seg seg${values.length}`, role: 'group' }, values.map((v) => h('button', {
+    class: 'btn', 'data-v': String(v), onclick: () => { pick[key] = v; refresh(); },
+  }, text(v))));
+  const cutSeg = seg(CAMPAIGN.CUTS, 'cut', (v) => T.campaignCutText(Math.round(v * 100)));
+  const monthSeg = seg(CAMPAIGN.MONTHS, 'months', (v) => T.campaignMonthsText(v));
+  const where = h('select', { class: 'branch-select', 'aria-label': T.campaignWhere, onchange: () => { pick.sector = where.value === 'all' ? null : Number(where.value); refresh(); } });
+  const costText = h('p', { class: 'small' });
+  const whyNot = h('p', { class: 'small warn' });
+  const startBtn = h('button', { class: 'btn btn-primary', onclick: () => dispatch({ type: 'campaign/start', payload: { ...pick } }) }, T.campaignStart);
+  const running = h('div');
+  const needsOffice = h('p', { class: 'dim small' }, T.marketingNeedsOffice);
+  const builder = h('div', {},
+    h('h4', {}, T.campaignCutLabel), cutSeg,
+    h('h4', {}, T.campaignMonthsLabel), monthSeg,
+    h('h4', {}, T.campaignWhere), where,
+    costText, whyNot, h('div', { class: 'actions' }, startBtn));
+  let last = null;
+  const refresh = () => last && update(last);
+
   const el = h('div', { class: 'panel-body' },
     h('section', { class: 'card' },
       h('h3', {}, T.customersTitle),
@@ -29,9 +54,41 @@ export function createCustomersPanel() {
             h('th', {}, T.colRevenue), h('th', {}, T.colLimit))),
           rows)),
     ),
+    h('section', { class: 'card' },
+      h('h3', {}, T.marketingTitle),
+      h('p', { class: 'dim small' }, T.campaignHelp),
+      needsOffice, running, builder),
   );
 
+  function updateCampaigns(s) {
+    const hired = s.offices.marketing.hired;
+    needsOffice.hidden = hired;
+    builder.hidden = !hired;
+    const owned = ownedSectors(s);
+    fillKeyed(where, owned.map((x) => x.id).join(','), () => [
+      h('option', { value: 'all' }, T.campaignAll),
+      owned.map((x) => h('option', { value: String(x.id) }, x.name)),
+    ]);
+    if (pick.sector !== null && !s.sectors[pick.sector]?.owned) pick.sector = null;
+    where.value = pick.sector === null ? 'all' : String(pick.sector);
+    for (const b of cutSeg.children) b.setAttribute('aria-pressed', String(Number(b.dataset.v) === pick.cut));
+    for (const b of monthSeg.children) b.setAttribute('aria-pressed', String(Number(b.dataset.v) === pick.months));
+    const scope = pick.sector === null ? owned : [s.sectors[pick.sector]];
+    const loss = scope.reduce((x, sec) => x + sectorRevenue(s, sec), 0) * pick.cut;
+    costText.textContent = T.campaignCost(money(campaignCost(s, pick.sector)), money(loss));
+    const ok = canStartCampaign(s, pick);
+    startBtn.disabled = !ok.ok;
+    whyNot.textContent = ok.ok ? '' : T.campaignReasons[ok.reason];
+    whyNot.hidden = ok.ok || !T.campaignReasons[ok.reason];
+
+    fillKeyed(running, s.campaigns.map((c) => `${c.id}:${c.left}`).join('|'), () => s.campaigns.map((c) => h('div', { class: 'cut-row' },
+      h('span', { class: 'small' }, T.campaignActive(Math.round(c.cut * 100), c.sector === null ? T.campaignAll : s.sectors[c.sector].name, c.left)),
+      h('button', { class: 'btn btn-danger', onclick: () => dispatch({ type: 'campaign/stop', payload: { id: c.id } }) }, T.campaignStop))));
+  }
+
   function update(s) {
+    last = s;
+    updateCampaigns(s);
     const n = totalCustomers(s);
     total.textContent = T.customersTotal(numFull(n));
     const r = s.report?.customers;

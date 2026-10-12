@@ -11,6 +11,8 @@ export function createLoop({ onTick, onFrame = () => {} }) {
   let acc = 0;
   let lastTime = null;
   let rafId = null;
+  let holds = 0;       // open alerts that pause the game
+  let resumeTo = 0;    // the speed before the first alert
 
   function advance(dtMs) {
     const dt = Math.min(dtMs, TIME.MAX_FRAME_MS);
@@ -42,13 +44,36 @@ export function createLoop({ onTick, onFrame = () => {} }) {
     emit('speed:change', speed);
   }
 
+  // Pause while an alert is on screen. The returned function ends the hold;
+  // after the last one the game runs again at the old speed (unless the player paused).
+  function hold() {
+    if (holds++ === 0) { resumeTo = speed; setSpeed(0); }
+    let done = false;
+    return () => {
+      if (done) return;
+      done = true;
+      holds = Math.max(0, holds - 1);
+      if (holds === 0 && speed === 0 && resumeTo > 0) setSpeed(resumeTo);
+      if (holds === 0) resumeTo = 0;
+    };
+  }
+
+  // The game ended or the player left: open alerts must not start the clock again.
+  function cancelHolds() {
+    holds = 0;
+    resumeTo = 0;
+  }
+
   return {
     advance,
     setSpeed,
+    hold,
+    cancelHolds,
     getSpeed: () => speed,
     lastSpeed: () => lastSpeed,
-    togglePause: () => setSpeed(speed === 0 ? lastSpeed : 0),
-    reset: () => { acc = 0; setSpeed(0); },
+    // Pause or Play by the player also ends "resume after the alert".
+    togglePause: () => { resumeTo = 0; setSpeed(speed === 0 ? lastSpeed : 0); },
+    reset: () => { acc = 0; cancelHolds(); setSpeed(0); },
     start() {
       if (rafId !== null) return;
       lastTime = null;

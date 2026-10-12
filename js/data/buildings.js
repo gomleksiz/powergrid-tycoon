@@ -16,5 +16,17 @@ export const BUILDINGS = {
 
 export const BUILDING_IDS = Object.keys(BUILDINGS);
 
+// Upgrades (version 1.1). Index = level. Level 2 costs 60 % of a new building, level 3 costs 90 %.
+// Plants with a build time need a field crew for half that time; the old level works meanwhile.
+export const LEVELS = {
+  MAX: 3,
+  COST: [0, 0, 0.6, 0.9],
+  OUTPUT: [0, 1, 1.5, 2],
+  WEEKS_SHARE: 0.5,
+};
+
+export const levelOf = (b) => b.level ?? 1;
+export const outputMult = (b) => LEVELS.OUTPUT[levelOf(b)];
+
 export const kwhPerMonth = (b, bonus = 0) =>
   (b.mw ?? 0) * 1000 * HOURS * (b.capacityFactor ?? 0) * (1 + bonus);

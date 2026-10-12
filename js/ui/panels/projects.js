@@ -6,35 +6,37 @@ import { WORK } from '../../data/balance.js';
 import { NODES, NODE_IDS } from '../../data/techTree.js';
 import { dispatch } from '../../core/store.js';
 import { STATUS } from '../../sim/effects.js';
-import { fieldProjects, deploySlots, deployCost, deployWeeks, canDeploy } from '../../sim/deployment.js';
-import { totalDamage } from '../../sim/repair.js';
+import { fieldProjects, deployCost, deployWeeks, canDeploy } from '../../sim/deployment.js';
+import { waitReason as reasonOf, deployCandidates } from '../../sim/offices.js';
 import { rushCost, canRush } from '../../sim/staffing.js';
 import { capexCost } from '../../sim/economy.js';
 import { money } from '../format.js';
 
 export function createProjectsPanel() {
   const crews = h('p', { class: 'small' });
+  const pmNote = h('p', { class: 'dim small' }, T.pmPlans);
+  const scheduleBtn = h('button', { class: 'btn btn-primary', title: T.scheduleAllHelp,
+    onclick: () => dispatch({ type: 'projects/scheduleAll' }) }, T.scheduleAll);
   const list = h('div', { class: 'proj-list' });
   const deploy = h('div', { class: 'proj-list' });
   const oneTime = h('div', { class: 'proj-list' });
   const bars = new Map();
 
   const el = h('div', { class: 'panel-body' },
-    h('section', { class: 'card' }, h('h3', {}, T.projectsTitle), crews, list),
+    h('section', { class: 'card' }, h('h3', {}, T.projectsTitle), crews,
+      h('div', { class: 'actions' }, scheduleBtn), h('p', { class: 'dim small' }, T.scheduleAllHelp), pmNote, list),
     h('section', { class: 'card' }, h('h3', {}, T.deployTitle), deploy),
     h('section', { class: 'card one-time' }, h('h3', {}, T.activateTitle), oneTime),
   );
 
-  function waitReason(s, p) {
-    if (s.staff.repairFirst && totalDamage(s) > 0) return T.waitingRepair;
-    if (deploySlots(s) < 1) return T.waitingCrew;
-    if (!p.paid && s.company.cash < deployCost(s, p.node)) return T.waitingCash;
-    return T.waitingCrew;
-  }
+  const WAIT_TEXT = { repair: T.waitingRepair, crew: T.waitingCrew, cash: T.waitingCash, team: T.waitingCrew };
+  const waitReason = (s, p) => WAIT_TEXT[reasonOf(s, p)];
 
   function projectName(s, p) {
     const sector = s.sectors[p.sector].name;
-    return p.kind === 'deploy' ? `${NODES[p.node].name} · ${sector}` : T.buildingProject(T.buildings[p.type], sector);
+    if (p.kind === 'deploy') return `${NODES[p.node].name} · ${sector}`;
+    if (p.kind === 'upgrade') return T.upgradeProject(T.buildings[p.type], sector, p.level);
+    return T.buildingProject(T.buildings[p.type], sector);
   }
 
   function item(s, p) {
@@ -76,6 +78,8 @@ export function createProjectsPanel() {
     const all = Math.floor(s.staff.technicians / WORK.CREW_SIZE);
     const field = fieldProjects(s);
     crews.textContent = T.crewsTitle(all, field.filter((p) => p.status === 'active').length);
+    pmNote.hidden = !s.offices.manager.hired;
+    scheduleBtn.disabled = deployCandidates(s).length === 0 && !(s.staff.engineers >= WORK.TEAM_SIZE);
 
     const key = field.map((p) => `${p.id}:${p.status}:${p.rushed}:${canRush(s, p)}:${p.status === 'waiting' ? waitReason(s, p) : ''}`).join('|') || 'none';
     fillKeyed(list, key, () => {

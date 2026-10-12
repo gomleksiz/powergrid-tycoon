@@ -395,3 +395,15 @@ dl.credits dd { margin: 2px 0 0; color: var(--c-text-dim); }
 .debug-panel select, .debug-panel input { max-width: 170px; min-height: 36px; background: var(--c-bg); border: 1px solid var(--c-line); border-radius: 4px; }
 .debug-panel input { width: 70px; }
 .debug-panel .btn { min-height: 36px; padding: 2px 8px; font-size: 14px; }
+
+/* ---------- version 1.1: offices, outage help, upgrades, campaigns ---------- */
+.office + .office { margin-top: var(--gap); padding-top: var(--gap); border-top: var(--border); }
+.office h4 { margin: 0 0 4px; }
+.advice h4 { margin: var(--gap) 0 6px; }
+.advice-tip, .building-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 6px 0;
+}
+.advice-tip + .advice-tip, .building-row + .building-row { border-top: 1px solid var(--c-line); }
+.advice-tip .btn, .building-row .btn { flex: none; }
+.pm-report li { padding: 3px 0; }

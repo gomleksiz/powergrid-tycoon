@@ -1,5 +1,10 @@
 // All player-facing text. Keep sentences short and plain.
 
+import { NODES } from './techTree.js';
+
+const n = (v) => Math.round(v).toLocaleString('en-US');
+const plural = (k, one, many = `${one}s`) => `${k} ${k === 1 ? one : many}`;
+
 export const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export const T = {
@@ -438,6 +443,107 @@ export const T = {
     ['Music and sound effects', 'Made in code with the Web Audio API (js/audio/audio.js). No sound files.'],
   ],
 
+  // ---------- version 1.1 ----------
+
+  // Offices (Staff tab)
+  officesTitle: 'Offices',
+  officeNames: { manager: 'Project Manager', marketing: 'Marketing department' },
+  officeJob: {
+    manager: 'Watches your staff and projects. Tells you in the news when people have no work or a project waits too long. Can start research and deployments for you.',
+    marketing: 'Runs price campaigns, for example 50% off for 6 months, to win new customers and rival customers (Customers tab).',
+  },
+  officeHire: (cost, wage) => `Hire: ${cost}, then ${wage} a month`,
+  officeHired: (wage) => `Hired · ${wage} a month`,
+  officeClose: 'Let go',
+  officeCloseConfirm: (name) => `Let the ${name} go? Running campaigns stop.`,
+  pmAutoResearch: 'Start research when a team is free',
+  pmAutoDeploy: 'Start deployments when a crew is free (keeps 3 months of costs in cash)',
+  pmReportTitle: 'What sits idle',
+  pmAllGood: 'Everyone has work. No project waits.',
+  pmIdleLine: (role, count, weeks) => `${count} ${T.roles[role].toLowerCase()} have no work${weeks > 0 ? ` (${plural(weeks, 'week')})` : ''}.`,
+  pmStuckLine: (name, reason, weeks) => `${name} waits ${plural(weeks, 'week')}: ${T.waitReasons[reason]}.`,
+  pmHireHint: 'A Project Manager also writes these in the news, and can plan the projects for you.',
+  waitReasons: {
+    team: 'all research teams are busy (hire engineers)',
+    repair: 'technicians repair first (there is damage)',
+    crew: 'no free field crew (hire technicians)',
+    cash: 'not enough cash',
+  },
+  projectLabel: (p) => (p.kind === 'research' ? NODES[p.node].name
+    : p.kind === 'deploy' ? `${NODES[p.node].name} · ${p.sector}`
+      : p.kind === 'upgrade' ? `${T.buildings[p.type]} upgrade · ${p.sector}`
+        : `${T.buildings[p.type]} · ${p.sector}`),
+  idleHint: { engineers: 'Start research in the Research tab.', technicians: 'Start a deployment in the Projects tab.' },
+
+  // Projects tab
+  scheduleAll: 'Schedule all',
+  scheduleAllHelp: 'Queues every deployment you can do and gives free research teams work. Each project waits for a free crew and the cash.',
+  pmPlans: 'Your Project Manager plans projects (Staff tab).',
+  upgradeProject: (b, sector, level) => `${b} to level ${level} · ${sector}`,
+
+  // Sector tab: repair crews and outage help
+  repairCrewLine: (count, weeks) => `🔧 ${plural(count, 'technician')} repairing here. Done in about ${plural(weeks, 'week')}.`,
+  repairNobody: '🔧 Nobody repairs here now. All technicians are busy.',
+  adviceTitle: 'What to do',
+  adviceDo: 'Do it',
+  adviceBuild: 'Build',
+  advice: {
+    noCrew: () => 'All technicians are busy. Hire 4 more.',
+    slowRepair: (d) => `The repair here takes ${d.weeks ? plural(d.weeks, 'week') : 'very long'}. Hire 4 technicians.`,
+    priority: () => 'Other sectors need repair too. Set this sector to High priority.',
+    repairFirst: () => 'Technicians build instead of repairing. Turn on "Repair first".',
+    maintenance: (d) => `Old lines (Health ${d.health}). Raise Maintenance by 10 points.`,
+    upgradeSubstation: (d) => `The evening peak is near the capacity. Upgrade a substation to level ${d.level}.`,
+    buildSubstation: (d) => `Or build a new substation (+${d.mw} MW).`,
+    sellLess: () => 'You sell power to the government in this shortage. Sell less (Budget tab).',
+    ownPower: (d) => (d.type ? `Power shortage in the region. Build own power: ${T.buildings[d.type]}.`
+      : 'Power shortage in the region. Research Batteries or Wind Farms for own power at the peak.'),
+    strike: () => 'Strike: repairs are 50% slower. Raise wages.',
+  },
+  potentialGrows: 'From 2038 the region grows each year: more homes and firms want power.',
+
+  // Sector tab: buildings and upgrades
+  buildingLevel: (name, level) => `${name} · level ${level}`,
+  buildingOutput: { capacity: (mw) => `${mw} MW capacity`, peak: (mw) => `${mw} MW at the peak`, plant: (mw) => `${mw} MW` },
+  upgrade: (cost) => `Upgrade ${cost}`,
+  upgradeMax: 'Top level',
+  underConstruction: 'Being built',
+  upgrading: 'Upgrading…',
+  upgradeReasons: { cash: 'Not enough cash.', permit: 'GS too low for a permit.', busy: 'Busy.', max: 'Top level.', notOwned: '' },
+  upgradeHelp: 'Level 2 gives 50% more, level 3 twice as much. Big plants need a field crew for the upgrade.',
+
+  // Customers tab: campaigns
+  marketingTitle: 'Marketing campaigns',
+  marketingNeedsOffice: 'Hire a Marketing department (Staff tab) to run campaigns.',
+  campaignCutLabel: 'Price cut',
+  campaignMonthsLabel: 'How long',
+  campaignWhere: 'Where',
+  campaignAll: 'All my sectors',
+  campaignCutText: (pct) => `${pct}% off`,
+  campaignMonthsText: (m) => `${m} months`,
+  campaignCost: (setup, loss) => `Start cost ${setup}. Less revenue: about ${loss} a month.`,
+  campaignStart: 'Start campaign',
+  campaignHelp: 'A lower price brings more new customers (+30% while it runs), and rival customers switch to you. Rivals answer with a price war. 50% off looks unfair: GS − 1 each month.',
+  campaignActive: (pct, where, left) => `${pct}% off · ${where} · ${plural(left, 'month')} left`,
+  campaignStop: 'Stop',
+  campaignReasons: {
+    noOffice: 'No Marketing department.', bad: '', notOwned: '', max: 'At most 4 campaigns at a time.',
+    running: 'A campaign already runs there.', cash: 'Not enough cash.',
+  },
+
+  // Budget tab: the energy market
+  energyTitle: 'Energy market',
+  shortageLine: (pct) => (pct > 0 ? `⚠ Regional power shortage: ${pct}% too little power at the evening peak.` : 'The region has enough power now.'),
+  regionOutlook: 'Demand grows faster than the region\'s plants, so shortages come more often each year (most in summer and winter). In a shortage, customers without own plants get outages.',
+  wholesaleNow: (p) => `Wholesale price: ${p} per kWh.`,
+  govPriceLine: (p, mult) => `The government pays ${p} per kWh for your power (${mult}× wholesale).`,
+  ownPowerLine: (own, use) => `Your plants make ${own} a month. Your customers use ${use}.`,
+  ownPeakLine: (mw) => `Own power at the evening peak: ${mw} MW.`,
+  govShareSlider: 'Sell to the government in a shortage',
+  govShareHelp: 'This share of your plant power goes to the government in a shortage, at the government price. It raises GS, but your own customers lose this power at the peak. Power your customers do not need is always sold.',
+  lastSaleLine: (kwh, money) => `Last month: ${kwh} sold for ${money}.`,
+  sales: 'Power sold',
+
   // Monthly report
   reportTitle: (label) => `Report: ${label}`,
   moneyIn: 'Money in',
@@ -524,7 +630,7 @@ export const T = {
   reduceMotionHelp: 'Stops moving dots, rain and other animations.',
   batterySaver: 'Battery saver',
   batterySaverHelp: 'Draws the map at 30 frames each second, with no moving dots.',
-  autoPauseProject: 'Pause when a project is done',
+  pauseOnProject: 'Pause when a project is done',
   reportMode: 'Monthly report',
   reportModes: { popup: 'Show a card', log: 'Only in the news log' },
   musicVolume: 'Music',
@@ -563,5 +669,19 @@ export const T = {
     staffArrived: ({ role, count }) => `${count} new ${count === 1 ? T.roleOne[role] : T.roles[role].toLowerCase()} started work.`,
     researchDone: ({ name }) => `Research done: ${name}.`,
     deployDone: ({ name, sector }) => `${name} is now active in ${sector}.`,
+    // version 1.1
+    shortageStart: ({ pct }) => `Power shortage in the region: ${pct}% too little power at the peak. Own plants keep your lights on, and the government buys your power (Budget tab).`,
+    shortageNow: ({ pct }) => `The regional power shortage is now ${pct}%.`,
+    shortageEnd: () => 'The regional power shortage is over.',
+    regionGrew: ({ count }) => `The region grew: ${n(count)} more homes and firms want power. Check your capacity and plants.`,
+    priceWar: ({ rival, name }) => `Price war in ${name}: ${T.rivalNames[rival]} cuts its price to keep its customers.`,
+    wonFromRivals: ({ count }) => `${n(count)} rival customers switched to you for your lower price.`,
+    campaignStart: ({ cut, months }) => `Campaign started: ${cut}% off for ${months} months.`,
+    campaignEnd: ({ cut, sector }) => `The ${cut}% campaign${sector ? ` in ${sector}` : ''} has ended. Prices are back to normal.`,
+    officeHired: ({ office }) => `${T.officeNames[office]} hired.`,
+    scheduledAll: ({ count }) => (count ? `${plural(count, 'project')} scheduled. Each starts when a team or crew is free.` : 'Nothing new to schedule.'),
+    pmIdle: ({ role, count, weeks }) => `Project Manager: ${count} ${T.roles[role].toLowerCase()} have had no work for ${weeks} weeks. ${T.idleHint[role]}`,
+    pmStuck: ({ project, reason, weeks }) => `Project Manager: ${T.projectLabel(project)} has waited ${weeks} weeks: ${T.waitReasons[reason]}.`,
+    upgraded: ({ building, sector, level }) => `${T.buildings[building]} in ${sector} is now level ${level}.`,
   },
 };

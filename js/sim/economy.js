@@ -1,16 +1,26 @@
 // Money each month (design section 6). Pure functions on the state.
 
-import { TIERS, TIER_IDS, MONEY, WHOLESALE, SEASON_OF_MONTH, STAFF, BUDGET, METERS } from '../data/balance.js';
-import { BUILDINGS } from '../data/buildings.js';
+import { TIERS, TIER_IDS, MONEY, WHOLESALE, SEASON_OF_MONTH, STAFF, BUDGET, METERS, REGION } from '../data/balance.js';
+import { BUILDINGS, levelOf } from '../data/buildings.js';
+import { OFFICES, OFFICE_IDS } from '../data/offices.js';
 import { potentialTotal } from './setup.js';
 import { diff } from '../data/difficulty.js';
+import { priceCut } from './marketing.js';
+import { govPriceMult } from './market.js';
 
 export const seasonOf = (month) => SEASON_OF_MONTH[(month - 1) % 12];
 
 export function wholesalePrice(state, month = state.time.month) {
   const base = diff(state).wholesaleStart / WHOLESALE.SEASON_MULT[seasonOf(1)];
-  return base * WHOLESALE.SEASON_MULT[seasonOf(month)] * state.market.walk * state.market.eventMult;
+  return base * WHOLESALE.SEASON_MULT[seasonOf(month)] * state.market.walk * state.market.eventMult
+    * (1 + REGION.PRICE_K * (state.market.shortage ?? 0));
 }
+
+// What the government pays for own power (per kWh). Without a shortage: 50 % of wholesale.
+export const govPrice = (state) => wholesalePrice(state) * govPriceMult(state.market.shortage ?? 0);
+
+// The share of own plant power promised to the government. It counts only in a shortage.
+export const govShareNow = (state) => ((state.market.shortage ?? 0) > 0 ? state.govtSale?.share ?? 0 : 0);
 
 // Random walk ± 3 % each month, kept in [0.7, 1.6].
 export function stepWalk(state, rng) {
@@ -41,11 +51,11 @@ export function customersByTier(state) {
   return out;
 }
 
-// Full bill before any withheld payment.
+// Full bill before any withheld payment. Price cuts and campaigns lower it.
 export function sectorRevenue(state, sector) {
   let r = 0;
   for (const t of TIER_IDS) r += sector.customers[t] * TIERS[t].tariff * state.prices[t];
-  return r * (1 - (sector.discount ?? 0)) * state.market.priceMult;
+  return r * (1 - priceCut(state, sector)) * state.market.priceMult;
 }
 
 export function projectedRevenue(state) {
@@ -68,16 +78,25 @@ export function wages(state) {
   const s = state.staff;
   let w = 0;
   for (const role of STAFF.ROLES) w += s[role] * STAFF.WAGE[role];
-  return w * s.wageMult;
+  return w * s.wageMult + officeWages(state);
+}
+
+export function officeWages(state) {
+  return OFFICE_IDS.reduce((n, id) => n + (state.offices?.[id]?.hired ? OFFICES[id].wage : 0), 0);
 }
 
 export function buildingCount(state) {
   return ownedSectors(state).reduce((n, s) => n + s.buildings.length, 0);
 }
 
+// An upgraded building costs more upkeep: $500 × its level.
 export function upkeep(state) {
-  return ownedSectors(state).length * MONEY.UPKEEP_SECTOR + buildingCount(state) * MONEY.UPKEEP_BUILDING;
+  const levels = ownedSectors(state).reduce((n, s) => n + s.buildings.reduce((x, b) => x + levelOf(b), 0), 0);
+  return ownedSectors(state).length * MONEY.UPKEEP_SECTOR + levels * MONEY.UPKEEP_BUILDING;
 }
+
+// Money out each month without energy and tax (for the Advisor, the manager and bots).
+export const monthlyCosts = (state) => wages(state) + upkeep(state) + interest(state) + budgetDollars(state).total;
 
 export function demandKwh(state) {
   let kwh = 0;
@@ -92,6 +111,16 @@ export function energyCost(demand, ownKwh, price) {
   return buy * price - MONEY.SELLBACK_SHARE * sell * price;
 }
 
+// Version 1.1: in a shortage a share of own power goes to the government (govShare).
+// Own power that customers do not need is sold too, all at sellPrice.
+export function energyTrade(demand, ownKwh, price, sellPrice, govShare = 0) {
+  const gov = ownKwh * govShare;
+  const own = ownKwh - gov;
+  const buyKwh = Math.max(0, demand - own);
+  const sellKwh = gov + Math.max(0, own - demand);
+  return { buyKwh, sellKwh, cost: buyKwh * price, sales: sellKwh * sellPrice };
+}
+
 export const interest = (state) => state.company.debt * MONEY.INTEREST_RATE;
 
 // ctx: { withheld, penalties, ownKwh, capexCredit } from the other sim parts.
@@ -102,6 +131,7 @@ export function monthlyMoney(state, ctx = {}) {
   const revenue = gross - withheld;
   const demand = demandKwh(state);
   const ownKwh = ctx.ownKwh ?? 0;
+  const trade = energyTrade(demand, ownKwh, price, govPrice(state), govShareNow(state));
   const out = {
     revenue,
     gross,
@@ -109,14 +139,17 @@ export function monthlyMoney(state, ctx = {}) {
     price,
     demandKwh: demand,
     ownKwh,
-    energy: energyCost(demand, ownKwh, price),
+    energy: trade.cost,
+    sales: trade.sales,
+    soldKwh: trade.sellKwh,
+    govPrice: govPrice(state),
     wages: wages(state),
     upkeep: upkeep(state),
     budget: budgetDollars(state).total,
     interest: interest(state),
     penalties: ctx.penalties ?? 0,
   };
-  out.preTax = out.revenue - out.energy - out.wages - out.upkeep - out.budget - out.interest - out.penalties;
+  out.preTax = out.revenue + out.sales - out.energy - out.wages - out.upkeep - out.budget - out.interest - out.penalties;
   const tax = Math.max(0, out.preTax) * MONEY.TAX_RATE;
   out.tax = Math.max(0, tax - (ctx.capexCredit ?? 0));
   out.net = out.preTax - out.tax;

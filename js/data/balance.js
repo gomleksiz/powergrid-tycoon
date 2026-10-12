@@ -1,7 +1,7 @@
 // All tunable numbers. No magic numbers in the code: add new ones here.
 // Section numbers point to the design document.
 
-export const GAME_VERSION = '1.0.0';
+export const GAME_VERSION = '1.1.0';
 // Locked at 1 for the release. Each later change to the state needs a migration (js/save/migrate.js).
 export const SAVE_VERSION = 1;
 
@@ -151,6 +151,33 @@ export const WORK = {
   RUSH_RP_DOLLARS: 500,      // RP projects: original cost = RP × $500 (design: $50; balance step 13)
   RUSH_ES_SHOCK: -5,
   CRUNCH_MONTHS: 3,
+};
+
+// ---------- Growth over time (version 1.1) ----------
+
+export const GROWTH = {
+  // More homes and firms each year in every sector (compound).
+  POTENTIAL_YEAR: { low: 0.01, medium: 0.015, high: 0.02, corporate: 0.03 },
+  START_MONTH: 101,          // the towns start to grow with Phase 3 (2038)
+  PEAK_YEAR: 0.01,           // each customer needs 1 % more power at the evening peak each year
+};
+
+// Regional power supply (version 1.1). Demand in the region grows faster than its plants,
+// so shortages come in the 2030s. Own plants keep the lights on and can sell to the government.
+export const REGION = {
+  START_MARGIN: 0.08,        // supply is 8 % above demand in 2030
+  DEMAND_YEAR: 0.03,
+  SUPPLY_YEAR: 0.015,
+  SEASON: { spring: 0, summer: 0.05, fall: 0, winter: 0.03 },  // extra demand
+  NOISE_STEP: 0.01,          // random walk each month
+  NOISE_MAX: 0.03,
+  PRICE_K: 1,                // wholesale × (1 + shortage)
+  GOV_K: 10,                 // government price = wholesale × (0.5 + 10 × shortage) …
+  GOV_MAX: 2,                // … at most 2 × wholesale
+  GS_PER_GWH: 1,             // GS target + 1 for each GWh sold to the government in a shortage
+  GS_MAX: 8,
+  NEWS_STEP: 0.03,           // news when the shortage moves by 3 points
+  SHARE_STEP: 0.1,           // the "sell to the government" slider
 };
 
 // ---------- Meters (section 11) ----------

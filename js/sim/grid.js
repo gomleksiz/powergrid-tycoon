@@ -1,27 +1,31 @@
 // Capacity, peak load and outage hours (design section 7).
 // The game does not simulate each hour: it finds H for each sector each month.
 
-import { TIERS, TIER_IDS, TIME, GRID } from '../data/balance.js';
-import { BUILDINGS, kwhPerMonth } from '../data/buildings.js';
+import { TIERS, TIER_IDS, TIME, GRID, GROWTH } from '../data/balance.js';
+import { BUILDINGS, kwhPerMonth, outputMult } from '../data/buildings.js';
 import { SECTOR_TYPES } from '../data/sectors.js';
 import { OUTAGE_REDUCE_MIN_R } from '../data/techTree.js';
 import { sectorEffects } from './effects.js';
+import { loadGrowth } from './market.js';
 
 const active = (b) => b.status === 'active';
 
+// An upgraded building gives more (data/buildings.js LEVELS).
 export function capacityMw(sector) {
   return sector.buildings.filter((b) => active(b) && BUILDINGS[b.type].capacityMw)
-    .reduce((mw, b) => mw + BUILDINGS[b.type].capacityMw, 0);
+    .reduce((mw, b) => mw + BUILDINGS[b.type].capacityMw * outputMult(b), 0);
 }
 
+// Each customer needs a bit more power at the peak every year (version 1.1).
 export function peakMw(state, sector) {
   let kw = 0;
   for (const t of TIER_IDS) kw += sector.customers[t] * TIERS[t].peakKw;
-  return (kw / 1000) * state.market.peakMult;
+  return (kw / 1000) * state.market.peakMult * loadGrowth(state.time.month, GROWTH.PEAK_YEAR);
 }
 
 // Own help at the evening peak (MW): plants, batteries and the VPP. Solar gives 0.
-export function ownPeakMw(state) {
+// govShare: the part of plant power promised to the government (it does not help own customers).
+export function ownPeakMw(state, govShare = 0) {
   let mw = 0;
   for (const s of state.sectors) {
     if (!s.owned) continue;
@@ -29,8 +33,8 @@ export function ownPeakMw(state) {
     for (const b of s.buildings) {
       if (!active(b) || b.stopped > 0) continue;
       const def = BUILDINGS[b.type];
-      if (def.peakMw) mw += def.peakMw;
-      else if (def.mw) mw += def.mw * (def.peakShare ?? 0) * (b.type === 'wind' ? 1 + bonus : 1);
+      if (def.peakMw) mw += def.peakMw * outputMult(b);
+      else if (def.mw) mw += def.mw * outputMult(b) * (def.peakShare ?? 0) * (b.type === 'wind' ? 1 + bonus : 1) * (1 - govShare);
     }
     if (sectorEffects(state, s).vpp) mw += (s.prosumers * GRID.VPP_KW_PER_PROSUMER) / 1000;
   }
@@ -48,7 +52,7 @@ export function ownEnergy(state) {
     for (const b of s.buildings) {
       if (!active(b) || b.stopped > 0) continue;
       const def = BUILDINGS[b.type];
-      const k = kwhPerMonth(def, b.type === 'wind' ? bonus : 0);
+      const k = kwhPerMonth(def, b.type === 'wind' ? bonus : 0) * outputMult(b);
       kwh += k;
       if (def.clean) clean += k;
       if (def.fusion) fusion += k;
@@ -64,7 +68,8 @@ export function prosumerKwh(state) {
 // Company-wide supply gap at the peak (MW). Only when the wholesaler gives less than all.
 export function supplyGapMw(state, totalPeak) {
   if (state.market.supplyShare >= 1) return 0;
-  return Math.max(0, totalPeak * (1 - state.market.supplyShare) - ownPeakMw(state));
+  const gov = (state.market.shortage ?? 0) > 0 ? state.govtSale?.share ?? 0 : 0;
+  return Math.max(0, totalPeak * (1 - state.market.supplyShare) - ownPeakMw(state, gov));
 }
 
 // The parts of H for 1 sector (section 7).

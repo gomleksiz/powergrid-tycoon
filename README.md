@@ -38,7 +38,11 @@ You start with 1 town, Home Valley, and 2,000 customers.
 4. **Grow:** from month 41 open new sectors (tap a sector, "Open this sector"). Unlock Medium, High and Corporate customers with tech.
 5. **Meters:** keep Customer, Employee and Government Satisfaction up. Tap a meter to see why it moves.
 6. **Rivals and disasters:** Apex Energy and Volt Dynamics take customers; storms, floods, quakes and heatwaves damage the grid.
-7. **Win** one of 3 paths (Goals tab) and keep it for 3 months: Corporate Monopoly, Technological Singularity or Decentralized Utopia. You lose by bankruptcy, a revoked license (GS below 10) or customer collapse.
+7. **Offices:** hire a Project Manager (Staff tab). It warns you about idle staff and stuck projects, and can start research and deployments by itself. Or press **Schedule all** in the Projects tab.
+8. **Outages:** the Sector tab shows how many technicians repair there (also 🔧 on the map) and **What to do**, with a button for each tip.
+9. **Growth and power:** from 2038 the towns grow each year, and each home needs a bit more power at the peak. The region gets power shortages; own plants keep the lights on. Upgrade buildings to level 2 and 3 (Sector tab). Sell power to the government in a shortage (Budget tab → Energy market).
+10. **Marketing:** a Marketing department runs price campaigns (Customers tab), for example 50% off for 6 months. When you are cheaper than a rival, its customers switch to you and it starts a price war.
+11. **Win** one of 3 paths (Goals tab) and keep it for 3 months: Corporate Monopoly, Technological Singularity or Decentralized Utopia. You lose by bankruptcy, a revoked license (GS below 10) or customer collapse.
 
 The tutorial (on by default for Easy and Normal) teaches the first steps.
 
@@ -60,7 +64,7 @@ The tutorial (on by default for Easy and Normal) teaches the first steps.
 ## Put it online
 
 ```bash
-npm run package          # → dist/powergrid-tycoon-1.0.0.zip (index.html at the top level)
+npm run package          # → dist/powergrid-tycoon-1.1.0.zip (index.html at the top level)
 ```
 
 The ZIP has only the files the game needs. Any static host works:
@@ -93,13 +97,14 @@ docs/           design-notes.md (choices where the design has gaps), balance-log
 
 ## Saves
 
-`saveVersion` is locked at 1 for version 1.0.0. Each later change to the game state needs a migration step in `js/save/migrate.js` (new fields get their start value from `createState()` by themselves).
+`saveVersion` is still 1 in version 1.1.0: all new fields have start values in `createState()`, so 1.0 saves load as they are. Each later change to the game state needs a migration step in `js/save/migrate.js` (new fields get their start value from `createState()` by themselves).
 
 ## Progress
 
 - [x] Steps 1–12 – the full game
 - [x] Step 13 – Balance with bots: all 10 targets pass on Normal (`docs/balance-log.md`)
 - [x] Step 14 – Release build: version 1.0.0, debug panel, icons, manifest, package
+- [x] Version 1.1 – Project Manager, Schedule all, outage help and crews on the map, growth, regional shortages and selling to the government, upgrades, Marketing campaigns and price wars; alerts pause only while they are open (`docs/design-notes.md`, `docs/balance-log.md`)
 - [ ] Playtests with people (3 for each difficulty) and tests on real devices: iPhone (Safari), Android (Chrome), iPad, PC (Chrome, Firefox, Edge)
 - [ ] Put it online
 - Later (after 1.0): export and import of save files; the open question about power lines

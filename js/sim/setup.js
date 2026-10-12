@@ -6,15 +6,16 @@ import { BUILDINGS } from '../data/buildings.js';
 import { NODES, NODE_IDS } from '../data/techTree.js';
 import { STATUS } from './effects.js';
 
-export function emptyTiers() {
-  return { low: 0, medium: 0, high: 0, corporate: 0 };
+export function emptyTiers(v = 0) {
+  return { low: v, medium: v, high: v, corporate: v };
 }
 
 // Possible customers in a sector, for each tier.
+// It grows over time (sector.growth, version 1.1).
 export function sectorPotential(sector) {
   const base = SECTOR_TYPES[sector.type].potential;
-  if (!sector.home) return base;
-  return Object.fromEntries(Object.entries(base).map(([t, n]) => [t, Math.round(n * HOME.potentialMult)]));
+  const mult = sector.home ? HOME.potentialMult : 1;
+  return Object.fromEntries(Object.entries(base).map(([t, n]) => [t, Math.round(n * mult * (sector.growth?.[t] ?? 1))]));
 }
 
 export const potentialTotal = (sector) => Object.values(sectorPotential(sector)).reduce((a, b) => a + b, 0);
@@ -40,6 +41,8 @@ export function createSector(def) {
     prep: false,         // Storm Prep paid
     prepRepair: false,   // a prepped sector was hit: crews repair at once
     rival: null,
+    growth: emptyTiers(1), // more homes and firms over time (version 1.1)
+    repairTechs: 0,        // technicians that repaired here last week
   };
 }
 

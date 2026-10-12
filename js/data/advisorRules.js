@@ -37,6 +37,18 @@ export const ADVISOR_RULES = [
   { id: 'idleEngineers', priority: 50, when: { kind: 'noResearch' }, apply: { kind: 'research' } },
 ];
 
+// Outage help in the Sector tab (version 1.1, sim/advice.js).
+export const OUTAGE_HELP = {
+  SLOW_REPAIR_WEEKS: 2,      // tip "hire technicians" when the repair here takes longer
+  WEAR_HOURS: 2,             // tip "Maintenance" from 2 h of wear …
+  HEALTH: 50,                // … or Health below 50
+  BUDGET_STEP: 10,
+  CAPACITY_WARN: 0.9,        // tip "capacity" when the peak is over 90 % of the capacity
+  WAGE_STEP: 0.1,
+  PLANTS: ['battery', 'storage', 'wind', 'fission', 'fusion'],  // own peak power, the first one you can build
+  MAX_TIPS: 4,
+};
+
 // "Apply suggested budget" for each victory path.
 export const SUGGESTED_BUDGET = {
   none: { marketing: 20, rd: 20, maintenance: 20, lobbying: 20, pr: 20 },

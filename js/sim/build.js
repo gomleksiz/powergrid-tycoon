@@ -1,11 +1,11 @@
 // Place buildings on the map (design section 5).
 
-import { BUILDINGS } from '../data/buildings.js';
+import { BUILDINGS, LEVELS, levelOf } from '../data/buildings.js';
 import { METERS } from '../data/balance.js';
 import { mapgen, sectorAt, canPlace } from './mapgen.js';
 import { globalEffects } from './effects.js';
 import { spendCapex, capexCost } from './economy.js';
-import { addBuildProject } from './deployment.js';
+import { addBuildProject, addUpgradeProject } from './deployment.js';
 
 export { capexCost };
 
@@ -45,4 +45,45 @@ export function placeBuilding(state, type, x, y) {
   check.sector.buildings.push(building);
   if (b.buildWeeks) addBuildProject(state, building, check.sector.id);  // a field crew builds it
   return [{ type: 'build:placed', payload: { type, sector: check.sector.id } }];
+}
+
+// ---------- upgrades (version 1.1) ----------
+
+export function findBuilding(state, id) {
+  for (const sector of state.sectors) {
+    const b = sector.buildings.find((x) => x.id === id);
+    if (b) return { b, sector };
+  }
+  return null;
+}
+
+export function upgradeCost(state, b) {
+  return capexCost(state, BUILDINGS[b.type].cost * LEVELS.COST[levelOf(b) + 1]);
+}
+
+// → { ok, reason }
+export function canUpgrade(state, id) {
+  const found = findBuilding(state, id);
+  if (!found || !found.sector.owned) return { ok: false, reason: 'notOwned' };
+  const { b } = found;
+  const def = BUILDINGS[b.type];
+  if (levelOf(b) >= LEVELS.MAX) return { ok: false, reason: 'max' };
+  if (b.status !== 'active' || b.upgrading) return { ok: false, reason: 'busy' };
+  if (def.permitGs && (state.meters.gs < def.permitGs || state.meters.gs < METERS.LOW)) return { ok: false, reason: 'permit', gs: def.permitGs };
+  if (state.company.cash < upgradeCost(state, b)) return { ok: false, reason: 'cash' };
+  return { ok: true };
+}
+
+// Small buildings are upgraded at once. Plants with a build time need a field crew.
+export function upgradeBuilding(state, id) {
+  if (!canUpgrade(state, id).ok) return [];
+  const { b, sector } = findBuilding(state, id);
+  spendCapex(state, upgradeCost(state, b));
+  if (BUILDINGS[b.type].buildWeeks) {
+    b.upgrading = true;
+    addUpgradeProject(state, b, sector.id);
+    return [];
+  }
+  b.level = levelOf(b) + 1;
+  return [{ type: 'news', payload: { key: 'upgraded', building: b.type, sector: sector.name, level: b.level } }];
 }

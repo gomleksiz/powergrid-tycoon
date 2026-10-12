@@ -1,10 +1,11 @@
 // The 3 meters: Customer, Employee and Government Satisfaction (design section 11).
 // Each month the game finds a target; the meter moves part of the way to it.
 
-import { TIERS, TIER_IDS, METERS, SAT } from '../data/balance.js';
+import { TIERS, TIER_IDS, METERS, SAT, REGION } from '../data/balance.js';
 import { diff } from '../data/difficulty.js';
 import { globalEffects } from './effects.js';
-import { budgetDollars, demandKwh, marketShare } from './economy.js';
+import { budgetDollars, demandKwh, marketShare, govShareNow } from './economy.js';
+import { priceCut } from './marketing.js';
 import { ownEnergy, averageOutage, prosumerKwh } from './grid.js';
 import { backlogWeeks } from './repair.js';
 import { crunchCount } from './staffing.js';
@@ -20,7 +21,7 @@ export function averagePrice(state) {
     for (const t of TIER_IDS) {
       const c = s.customers[t];
       n += c;
-      sum += c * state.prices[t] * (1 - (s.discount ?? 0));
+      sum += c * state.prices[t] * (1 - priceCut(state, s));
     }
   }
   return n > 0 ? sum / n : 1;
@@ -30,7 +31,10 @@ export function averagePrice(state) {
 export function energyMix(state) {
   const demand = demandKwh(state);
   if (demand <= 0) return { c: 0, k: 0, wholesale: 1 };
-  const own = ownEnergy(state);
+  // Power promised to the government does not count for own customers.
+  const keep = 1 - govShareNow(state);
+  const all = ownEnergy(state);
+  const own = { kwh: all.kwh * keep, clean: all.clean * keep, fusion: all.fusion * keep };
   const roof = prosumerKwh(state);
   const clean = Math.min(demand, own.clean + roof);
   const wholesale = Math.max(0, demand - own.kwh - roof) / demand;
@@ -80,10 +84,17 @@ export function gsTarget(state, ctx = {}) {
     { key: 'coal', value: -SAT.GS_COAL * mix.k * g.coalDragMult },
     { key: 'uptime', value: uptime },
     { key: 'lobbying', value: Math.min(SAT.LOBBY_MAX, (lobby / SAT.LOBBY_DIVISOR) * (1 + SAT.PR_LOBBY * state.staff.pr)) },
+    { key: 'gridHelp', value: gridHelp(state) },
     { key: 'antitrust', value: -antitrust },
     { key: 'tech', value: g.gsBonus },
   ];
   return withTotal(parts);
+}
+
+// Power sold to the government in a shortage (last month) pleases the government.
+export function gridHelp(state) {
+  if (!((state.market.shortage ?? 0) > 0)) return 0;
+  return Math.min(REGION.GS_MAX, ((state.govtSale?.lastKwh ?? 0) / 1e6) * REGION.GS_PER_GWH);
 }
 
 function withTotal(parts) {

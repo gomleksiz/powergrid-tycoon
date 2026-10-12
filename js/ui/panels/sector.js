@@ -4,12 +4,13 @@ import { h, fill, fillKeyed } from '../dom.js';
 import { T } from '../../data/text.js';
 import { TIER_IDS } from '../../data/balance.js';
 import { SECTOR_TYPES } from '../../data/sectors.js';
-import { BUILDINGS, BUILDING_IDS } from '../../data/buildings.js';
+import { BUILDINGS, BUILDING_IDS, levelOf, outputMult } from '../../data/buildings.js';
 import { NODES } from '../../data/techTree.js';
 import { ui } from '../uiState.js';
 import { on } from '../../core/bus.js';
 import { getState } from '../../core/store.js';
-import { buildAllowed, capexCost } from '../../sim/build.js';
+import { buildAllowed, capexCost, canUpgrade, upgradeCost } from '../../sim/build.js';
+import { outageAdvice, repairWeeksHere } from '../../sim/advice.js';
 import { isTierUnlocked } from '../../sim/effects.js';
 import { money, numFull, hours } from '../format.js';
 import { dispatch } from '../../core/store.js';
@@ -28,6 +29,8 @@ export function createSectorPanel({ onBuild }) {
   const customers = h('div');
   const buildings = h('div');
   const grid = h('div');
+  const crew = h('p', { class: 'small' });
+  const advice = h('div', { class: 'advice' });
   const prioButtons = REPAIR.PRIORITIES.map((p) => h('button', {
     class: 'btn', 'aria-pressed': 'false',
     onclick: () => dispatch({ type: 'sector/priority', payload: { sector: selected(getState()).id, priority: p } }),
@@ -36,10 +39,10 @@ export function createSectorPanel({ onBuild }) {
 
   const el = h('div', { class: 'panel-body' },
     h('section', { class: 'card' }, head, warnBox, info, openBox),
-    h('section', { class: 'card grid-card' }, h('h3', {}, T.gridTitle), grid,
+    h('section', { class: 'card grid-card' }, h('h3', {}, T.gridTitle), grid, crew, advice,
       h('h4', {}, T.repairPriority), h('div', { class: 'seg seg3', role: 'group', 'aria-label': T.repairPriority }, prioButtons)),
     h('section', { class: 'card' }, h('h3', {}, T.customersTitle), customers),
-    h('section', { class: 'card' }, h('h3', {}, T.buildingsTitle), buildings),
+    h('section', { class: 'card' }, h('h3', {}, T.buildingsTitle), buildings, h('p', { class: 'dim small' }, T.upgradeHelp)),
     h('section', { class: 'card build-card' }, h('h3', {}, T.buildTitle), build),
   );
 
@@ -86,7 +89,8 @@ export function createSectorPanel({ onBuild }) {
       h('tbody', {}, TIER_IDS.filter((t) => sectorPotential(sec)[t]).map((t) => h('tr', { class: isTierUnlocked(s, t) ? '' : 'locked' },
         h('td', {}, isTierUnlocked(s, t) ? '' : '🔒 ', T.tierNames[t]),
         h('td', { class: 'num' }, sec.owned ? numFull(sec.customers[t]) : '–'),
-        h('td', { class: 'num' }, numFull(sectorPotential(sec)[t])))))));
+        h('td', { class: 'num' }, numFull(sectorPotential(sec)[t])))))),
+      h('p', { class: 'dim small' }, T.potentialGrows));
 
     const gridCard = grid.closest('.grid-card');
     gridCard.hidden = !sec.owned;
@@ -108,13 +112,37 @@ export function createSectorPanel({ onBuild }) {
           row(T.hParts.total, hours(sec.lastH), 'total'))),
         h('p', { class: 'dim small' }, T.capacityLine(capacityMw(sec).toFixed(1), peakMw(s, sec).toFixed(1))));
       REPAIR.PRIORITIES.forEach((pr, i) => prioButtons[i].setAttribute('aria-pressed', String(sec.priority === pr)));
+
+      // Who repairs here, and what the player can do about the outages (version 1.1).
+      crew.hidden = sec.damage <= 0;
+      if (sec.damage > 0) {
+        crew.textContent = sec.repairTechs > 0
+          ? T.repairCrewLine(sec.repairTechs, Math.max(1, Math.ceil(repairWeeksHere(s, sec))))
+          : T.repairNobody;
+        crew.className = `small ${sec.repairTechs > 0 ? '' : 'warn'}`;
+      }
+      const tips = outageAdvice(s, sec);
+      fillKeyed(advice, `${sec.id}|${tips.map((t) => `${t.id}:${JSON.stringify(t.details)}:${!!t.action}`).join('|')}`, () => (tips.length ? [
+        h('h4', {}, T.adviceTitle),
+        h('ul', { class: 'plain advice-list' }, tips.map((t) => h('li', { class: 'advice-tip' },
+          h('span', { class: 'small' }, T.advice[t.id](t.details)),
+          t.action ? h('button', {
+            class: 'btn',
+            onclick: () => (t.action.build ? onBuild(t.action.build) : dispatch(t.action)),
+          }, t.action.build ? T.adviceBuild : T.adviceDo) : null))),
+      ] : null));
+    } else {
+      crew.hidden = true;
+      fill(advice);
     }
 
-    const counts = {};
-    for (const b of sec.buildings) counts[b.type] = (counts[b.type] ?? 0) + 1;
-    fill(buildings, Object.keys(counts).length
-      ? h('ul', { class: 'plain' }, Object.entries(counts).map(([t, n]) => h('li', {}, `${n} × ${T.buildings[t]}`)))
-      : h('p', { class: 'dim small' }, T.noBuildings));
+    const bKey = sec.buildings.map((b) => {
+      const up = canUpgrade(s, b.id);
+      return `${b.id}:${levelOf(b)}:${b.status}:${!!b.upgrading}:${up.ok ? 'ok' : up.reason}:${upgradeCost(s, b)}`;
+    }).join('|') + `|${sec.id}|${sec.owned}`;
+    fillKeyed(buildings, bKey, () => (sec.buildings.length
+      ? h('ul', { class: 'plain building-list' }, sec.buildings.map((b) => buildingRow(s, sec, b)))
+      : h('p', { class: 'dim small' }, T.noBuildings)));
 
     if (!sec.owned) {
       fillKeyed(build, 'locked', () => h('p', { class: 'dim small' }, T.buildNeedsOwned));
@@ -138,6 +166,33 @@ export function createSectorPanel({ onBuild }) {
       h('span', { class: 'bb-size dim' }, `${b.size}×${b.size}`),
       h('span', { class: 'bb-why dim' }, why));
     }));
+  }
+
+  function outputText(b) {
+    const def = BUILDINGS[b.type];
+    const m = outputMult(b);
+    if (def.capacityMw) return T.buildingOutput.capacity(+(def.capacityMw * m).toFixed(1));
+    if (def.peakMw) return T.buildingOutput.peak(+(def.peakMw * m).toFixed(1));
+    return T.buildingOutput.plant(+(def.mw * m).toFixed(1));
+  }
+
+  function buildingRow(s, sec, b) {
+    const up = canUpgrade(s, b.id);
+    let action = null;
+    if (sec.owned && b.status === 'active') {
+      if (b.upgrading) action = h('span', { class: 'tag' }, T.upgrading);
+      else if (up.reason === 'max') action = h('span', { class: 'dim small' }, T.upgradeMax);
+      else {
+        action = h('button', {
+          class: 'btn', disabled: !up.ok, title: up.ok ? '' : T.upgradeReasons[up.reason],
+          onclick: () => dispatch({ type: 'building/upgrade', payload: { id: b.id } }),
+        }, T.upgrade(money(upgradeCost(s, b))));
+      }
+    }
+    return h('li', { class: 'building-row' },
+      h('span', {}, h('strong', {}, T.buildingLevel(T.buildings[b.type], levelOf(b))),
+        h('span', { class: 'dim small' }, ' · ', b.status === 'active' ? outputText(b) : T.underConstruction)),
+      action);
   }
 
   function meter(label, v, max, cls) {

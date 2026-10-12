@@ -2,7 +2,7 @@
 // The terrain is drawn once into a cache canvas (1152 × 720 art pixels).
 
 import { MAP, SECTOR_TYPES } from '../data/sectors.js';
-import { BUILDINGS } from '../data/buildings.js';
+import { BUILDINGS, levelOf } from '../data/buildings.js';
 import { TIER_IDS } from '../data/balance.js';
 import { mapgen, TILE, sectorBounds } from '../sim/mapgen.js';
 import { drawSprite, spritesReady } from './sprites.js';
@@ -38,6 +38,9 @@ const HOUSE_SPRITES = {
 };
 const MIN_HOUSE_SHARE = 0.25;   // a sector always shows some houses
 const FRAME_MS = { water: 700, wind: 140, fusion: 500 };
+const MAX_FIGURES = 4;              // crew figures drawn in one sector
+const TECHS_PER_FIGURE = 2;
+const FIELD = ['deploy', 'build', 'upgrade'];
 
 const motionQuery = window.matchMedia?.('(prefers-reduced-motion: reduce)');
 const reducedMotion = () => motionQuery?.matches
@@ -126,7 +129,60 @@ export function createMapRenderer(canvas, camera) {
           for (let dy = 0; dy < size; dy++) for (let dx = 0; dx < size; dx++) drawSprite(ctx, 'construction', (b.x + dx) * T, (b.y + dy) * T);
           ctx.globalAlpha = 1;
         }
+        drawLevel(b);
       }
+    }
+  }
+
+  // Upgraded buildings: 1 gold mark for level 2, 2 marks for level 3 (bottom-right corner).
+  function drawLevel(b) {
+    const marks = levelOf(b) - 1;
+    if (marks <= 0) return;
+    const size = BUILDINGS[b.type].size * T;
+    for (let i = 0; i < marks; i++) {
+      const x = b.x * T + size - 7 - i * 6;
+      const y = b.y * T + size - 7;
+      ctx.fillStyle = '#1a1400';
+      ctx.fillRect(x - 1, y - 1, 6, 6);
+      ctx.fillStyle = '#ffd23f';
+      ctx.fillRect(x, y, 4, 4);
+    }
+  }
+
+  // A small worker: hard hat, vest, legs. Repair crews wear orange, build crews white hats.
+  function drawWorker(x, y, hat, bob) {
+    ctx.fillStyle = hat;
+    ctx.fillRect(x, y + bob, 5, 2);
+    ctx.fillStyle = '#f2c79b';
+    ctx.fillRect(x + 1, y + 2 + bob, 3, 2);
+    ctx.fillStyle = '#ff7a1a';
+    ctx.fillRect(x, y + 4 + bob, 5, 4);
+    ctx.fillStyle = '#2b3350';
+    ctx.fillRect(x, y + 8, 2, 3);
+    ctx.fillRect(x + 3, y + 8, 2, 3);
+  }
+
+  // Crews at work (version 1.1): repair crews in damaged sectors, field crews at their project.
+  function drawCrews(state, now, motion) {
+    const step = Math.floor(now / 300);
+    for (const s of state.sectors) {
+      if (!s.owned) continue;
+      const bd = sectorBounds(s.id);
+      const figures = Math.min(MAX_FIGURES, Math.ceil((s.repairTechs ?? 0) / TECHS_PER_FIGURE));
+      for (let i = 0; i < figures; i++) {
+        const x = (bd.x + bd.w / 2 - 1) * T + i * 9;
+        const y = (bd.y + bd.h - 2) * T;
+        drawWorker(x, y, '#ffb000', motion && (step + i) % 2 ? -1 : 0);
+      }
+    }
+    for (const p of state.projects) {
+      if (!FIELD.includes(p.kind) || p.status !== 'active') continue;
+      const sec = state.sectors[p.sector];
+      const b = p.building ? sec.buildings.find((x) => x.id === p.building) : null;
+      const bd = sectorBounds(sec.id);
+      const x = b ? b.x * T - 4 : (bd.x + 2) * T;
+      const y = b ? (b.y + BUILDINGS[b.type].size) * T - 12 : (bd.y + bd.h - 2) * T;
+      for (let i = 0; i < 2; i++) drawWorker(x + i * 8, y, '#f4f6ff', motion && (step + i) % 2 ? -1 : 0);
     }
   }
 
@@ -178,6 +234,16 @@ export function createMapRenderer(canvas, camera) {
       ctx.fillRect(Math.round(p.x), Math.round(p.y), w + 12 * dpr, fontPx + 8 * dpr);
       ctx.fillStyle = sec.id === ui.selected ? '#1a1400' : '#eef1fb';
       ctx.fillText(text, Math.round(p.x + 6 * dpr), Math.round(p.y + 4 * dpr));
+      // Technicians repairing here (version 1.1)
+      if (sec.owned && sec.repairTechs > 0) {
+        const crew = `🔧 ${sec.repairTechs}`;
+        const cw = ctx.measureText(crew).width;
+        const y = Math.round(p.y + fontPx + 10 * dpr);
+        ctx.fillStyle = 'rgba(255, 122, 26, 0.9)';
+        ctx.fillRect(Math.round(p.x), y, cw + 12 * dpr, fontPx + 8 * dpr);
+        ctx.fillStyle = '#1a0d00';
+        ctx.fillText(crew, Math.round(p.x + 6 * dpr), y + Math.round(4 * dpr));
+      }
     }
   }
 
@@ -200,6 +266,7 @@ export function createMapRenderer(canvas, camera) {
     drawHouses(state, map);
     drawPowerLines(ctx, state, now, { particles: !reducedMotion() });
     drawBuildings(state, now);
+    drawCrews(state, now, !reducedMotion());
     drawViewOverlay(ctx, state, ui, now);
     drawLocked(state);
     drawWeather(ctx, state, now, { motion: !reducedMotion() });

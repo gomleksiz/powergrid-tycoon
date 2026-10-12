@@ -55,7 +55,7 @@ export function openSettings({ inGame = false } = {}) {
     check('reduceMotion', T.reduceMotion, T.reduceMotionHelp),
     check('batterySaver', T.batterySaver, T.batterySaverHelp),
     h('h3', {}, T.settingsGame),
-    check('autoPauseProject', T.autoPauseProject),
+    check('pauseOnProject', T.pauseOnProject),
     h('fieldset', { class: 'field' }, h('legend', {}, T.reportMode), h('div', { class: 'seg seg2' }, reportButtons)),
     h('h3', {}, T.settingsSound),
     music.el,

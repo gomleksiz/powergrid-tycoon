@@ -34,6 +34,7 @@ export function mountReport(root, { isEnabled = () => true } = {}) {
         h('div', {},
           h('h4', {}, T.moneyIn),
           line(T.revenue, m.gross),
+          m.sales >= 1 && line(T.sales, m.sales),
           m.withheld > 0 && line(T.withheld, -m.withheld, 'bad')),
         h('div', {},
           h('h4', {}, T.moneyOut),

@@ -4,13 +4,14 @@
 
 import { WORK, REPAIR } from '../data/balance.js';
 import { NODES, LEAP } from '../data/techTree.js';
-import { BUILDINGS } from '../data/buildings.js';
+import { BUILDINGS, LEVELS, levelOf } from '../data/buildings.js';
 import { STATUS, globalEffects } from './effects.js';
 import { companyEfficiency, fES, isStriking } from './workforce.js';
 import { spendCapex, capexCost } from './economy.js';
 import { freeTechnicians, totalDamage } from './repair.js';
 
-export const fieldProjects = (state) => state.projects.filter((p) => p.kind === 'deploy' || p.kind === 'build');
+export const FIELD_KINDS = ['deploy', 'build', 'upgrade'];
+export const fieldProjects = (state) => state.projects.filter((p) => FIELD_KINDS.includes(p.kind));
 
 export function deploySlots(state) {
   return Math.floor(freeTechnicians(state) / WORK.CREW_SIZE);
@@ -52,6 +53,16 @@ export function addBuildProject(state, building, sectorId) {
     id: state.nextId++, kind: 'build', building: building.id, type: building.type, sector: sectorId,
     status: 'waiting', progress: 0, total: BUILDINGS[building.type].buildWeeks * globalEffects(state).deployTimeMult,
     rushed: false, paid: true,
+  });
+}
+
+// The plant keeps working at its old level while the crew upgrades it.
+export function addUpgradeProject(state, building, sectorId) {
+  state.projects.push({
+    id: state.nextId++, kind: 'upgrade', building: building.id, type: building.type, sector: sectorId,
+    status: 'waiting', progress: 0,
+    total: BUILDINGS[building.type].buildWeeks * LEVELS.WEEKS_SHARE * globalEffects(state).deployTimeMult,
+    rushed: false, paid: true, level: levelOf(building) + 1,
   });
 }
 
@@ -102,6 +113,9 @@ function finishField(state, p) {
   const sector = state.sectors[p.sector];
   if (p.kind === 'deploy') {
     sector.tech[p.node] = STATUS.ACTIVE;
+  } else if (p.kind === 'upgrade') {
+    const b = sector.buildings.find((x) => x.id === p.building);
+    if (b) { b.level = levelOf(b) + 1; delete b.upgrading; }
   } else {
     const b = sector.buildings.find((x) => x.id === p.building);
     if (b) { b.status = 'active'; delete b.weeksLeft; }

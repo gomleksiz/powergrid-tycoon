@@ -1,5 +1,6 @@
 // What the screen does when the simulation reports something:
-// news lines, auto-pause (design section 3), dialogs, sounds and the music mood.
+// news lines, dialogs, sounds and the music mood.
+// Version 1.1: an alert dialog pauses the game only while it is open; then the game runs on.
 // Each sound also has a visual signal (a news line, a banner or a dialog).
 
 import { on } from '../core/bus.js';
@@ -18,6 +19,11 @@ const TENSE_WEEKS = 8;   // tense music after a warning, a disaster or a rival
 export function bindReactions({ loop, endScreen }) {
   let tense = 0;
   const tenseNow = () => { tense = TENSE_WEEKS; setMood('tense'); };
+  // Pause while the dialog is open, then go on at the old speed.
+  const holdWhile = (dlg) => {
+    const release = loop.hold();
+    dlg.el.addEventListener('close', release, { once: true });
+  };
   on('week:end', () => { if (tense > 0 && --tense === 0) setMood('calm'); });
 
   on('project:done', (p) => {
@@ -26,37 +32,35 @@ export function bindReactions({ loop, endScreen }) {
     else if (p.kind === 'deploy') news(T.news.deployDone({ name: NODES[p.node].name, sector: s.sectors[p.sector].name }));
     else news(T.news.buildDone({ building: p.type, sector: s.sectors[p.sector].name }));
     sfx('done');
-    if (getPrefs().autoPauseProject) loop.setSpeed(0);
+    if (getPrefs().pauseOnProject) loop.setSpeed(0);
   });
 
   on('disaster:warning', (w) => {
-    loop.setSpeed(0);
     news(T.news.warning({ name: T.disasterNames[w.type], weeks: w.weeks }), 'warn');
     sfx('alert');
     tenseNow();
-    showWarning(w);
+    holdWhile(showWarning(w));
   });
 
   on('disaster:hit', (r) => {
-    loop.setSpeed(0);
     news(T.news.disaster({ name: T.disasterNames[r.type] }), 'error');
     sfx(r.type === 'heatwave' ? 'alert' : 'storm');
     tenseNow();
-    showDisasterReport(r);
+    holdWhile(showDisasterReport(r));
   });
 
+  // A rival only shows in the news bar; the game does not stop.
   on('rival:enter', (e) => {
-    loop.setSpeed(0);
     news(T.news.rivalEnter(e), 'error');
     sfx('alert');
     tenseNow();
   });
   on('rival:leave', (e) => news(T.news.rivalLeave(e)));
+  on('rival:priceWar', (e) => news(T.news.priceWar(e), 'warn'));
 
   on('event:card', ({ id }) => {
-    loop.setSpeed(0);
     sfx('alert');
-    showEventCard(id);
+    holdWhile(showEventCard(id));
   });
 
   on('month:end', ({ report }) => {
@@ -68,6 +72,7 @@ export function bindReactions({ loop, endScreen }) {
   });
 
   on('game:end', (e) => {
+    loop.cancelHolds();
     loop.setSpeed(0);
     sfx(e.result === 'win' ? 'victory' : e.result === 'loss' ? 'loss' : 'done');
     endScreen.show(e);

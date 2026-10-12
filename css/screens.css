@@ -44,7 +44,7 @@ fieldset.field { border: 0; padding: 0; margin: 0; }
 .row { display: flex; gap: 8px; align-items: center; }
 .row > input { flex: 1; }
 .check { display: flex; gap: 10px; align-items: center; min-height: var(--touch); cursor: pointer; }
-.check input { width: 24px; height: 24px; accent-color: var(--c-accent); }
+.check input { flex: none; width: 24px; height: 24px; accent-color: var(--c-accent); }
 .actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; margin-top: 4px; }
 .actions .btn { flex: 1 1 auto; }
 

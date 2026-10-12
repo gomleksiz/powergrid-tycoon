@@ -33,4 +33,10 @@ export const RIVAL = {
   FRANCHISE_GS: 60,
   MONOPOLY_GS: 75,
   MONOPOLY_GS_SHOCK: -10,
+  // Price war (version 1.1): when your price is below the rival's, its customers switch to you.
+  WIN_RATE: 0.15,          // share each month × (rival price − your price)
+  WAR_STEP: 0.03,          // the undercut rival lowers its price each month …
+  WAR_FLOOR: 0.75,         // … to 75 % of its normal price at most
+  WAR_RECOVER: 0.01,       // and raises it again when you stop
+  WON_NEWS_MIN: 25,        // news when at least 25 customers switched to you in a month
 };

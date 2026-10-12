@@ -5,9 +5,11 @@ import { REPAIR, TIME, WORK } from '../data/balance.js';
 import { globalEffects } from './effects.js';
 import { companyEfficiency, fES, isStriking } from './workforce.js';
 
-// Technicians in a field crew on a deployment are busy.
+const FIELD = ['deploy', 'build', 'upgrade'];
+
+// Technicians in a field crew (deployment, plant building or upgrade) are busy.
 export function busyTechnicians(state) {
-  return state.projects.filter((p) => p.kind === 'deploy' && p.status === 'active').length * WORK.CREW_SIZE;
+  return state.projects.filter((p) => FIELD.includes(p.kind) && p.status === 'active').length * WORK.CREW_SIZE;
 }
 
 export function freeTechnicians(state) {
@@ -23,7 +25,7 @@ export function repairTechnicians(state) {
   if (totalDamage(state) <= 0) return 0;
   const free = freeTechnicians(state);
   if (state.staff.repairFirst) return free;
-  const waiting = state.projects.filter((p) => p.kind === 'deploy' && p.status === 'waiting').length;
+  const waiting = state.projects.filter((p) => FIELD.includes(p.kind) && p.status === 'waiting').length;
   return Math.max(0, free - waiting * WORK.CREW_SIZE);
 }
 
@@ -50,15 +52,21 @@ export function repairOrder(state) {
 }
 
 // 1 week: count the damage hours, then repair. Returns the points used.
+// sector.repairTechs = technicians that worked there this week (for the map and the panel).
 export function repairWeek(state) {
   let points = repairPower(state);
   const used = points;
+  const perTech = repairPower(state, 1);
+  const fixAt = (s, fix) => {
+    s.damage = Math.max(0, +(s.damage - fix).toFixed(4));
+    s.repairTechs += perTech > 0 ? Math.ceil(fix / perTech - 1e-9) : 0;
+    points -= fix;
+  };
+  for (const s of state.sectors) s.repairTechs = 0;
   // Storm Prep: the crews wait near the sector, so they repair before the outage hours count.
   for (const s of state.sectors) {
     if (!s.prepRepair) continue;
-    const fix = Math.min(points, s.damage);
-    s.damage = Math.max(0, +(s.damage - fix).toFixed(4));
-    points -= fix;
+    fixAt(s, Math.min(points, s.damage));
     s.prepRepair = false;
   }
   for (const s of state.sectors) {
@@ -66,9 +74,7 @@ export function repairWeek(state) {
   }
   for (const s of repairOrder(state)) {
     if (points <= 0) break;
-    const fix = Math.min(points, s.damage);
-    s.damage = Math.max(0, +(s.damage - fix).toFixed(4));
-    points -= fix;
+    fixAt(s, Math.min(points, s.damage));
   }
   return used - points;
 }
