@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1020">
+  <meta name="description" content="PowerGrid Tycoon – run an electric company from 2030 to 2049.">
+  <title>PowerGrid Tycoon</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%230b1020'/><path d='M9 1 3 9h4l-1 6 6-8H8z' fill='%23ffd23f'/></svg>">
+  <link rel="preload" href="assets/fonts/atkinson-hyperlegible-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/screens.css">
+</head>
+<body>
+  <div id="app" class="app" hidden>
+    <header id="topbar" class="topbar"></header>
+
+    <main id="map-area" class="map-area">
+      <canvas id="map" class="map-canvas" aria-label="Map"></canvas>
+    </main>
+
+    <aside id="sidepanel" class="sidepanel" aria-label="Panel"></aside>
+    <div id="scrim" class="scrim" hidden></div>
+
+    <footer id="newsbar" class="newsbar" role="status" aria-live="polite"></footer>
+
+    <nav id="bottombar" class="bottombar" aria-label="Panels"></nav>
+  </div>
+
+  <div id="screen-root"></div>
+
+  <noscript>PowerGrid Tycoon needs JavaScript.</noscript>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "name": "powergrid-tycoon",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "PowerGrid Tycoon – a browser strategy game about running an electric utility, 2030–2049.",
+  "scripts": {
+    "start": "npx serve -l 8080",
+    "test": "node --test",
+    "sim": "node tools/sim-runner.js"
+  }
+}

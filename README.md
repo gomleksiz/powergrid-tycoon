@@ -1,0 +1,66 @@
+# PowerGrid Tycoon
+
+A browser strategy game: run an electric company from Jan 2030 to Dec 2049.
+Plain HTML, CSS and JavaScript modules. No build step, no server code. Saves stay in the browser (localStorage).
+
+## Run
+
+```bash
+npm start            # = npx serve -l 8080
+```
+
+Open <http://localhost:8080>. Always use port 8080: saves belong to the origin, so another port looks like an empty save list.
+
+On a phone on the same Wi-Fi, open `http://<your-PC-IP>:8080`. The phone has its own saves.
+
+## Test
+
+```bash
+npm test                                              # node --test
+npm run sim -- --seed 42 --difficulty normal --months 24   # headless sim, CSV to stdout
+```
+
+## Keys
+
+| Key | Action |
+| --- | --- |
+| Space | Pause / play |
+| 1, 2, 3 | Speed 1x, 2x, 5x |
+| Esc | Pause menu |
+
+## Folders
+
+```
+index.html
+css/            base.css (tokens, font), layout.css (3 layouts), screens.css
+js/main.js      entry point
+js/core/        loop, store, bus, rng, time, session
+js/data/        all numbers (balance.js) and all text (text.js)
+js/sim/         game rules – no DOM, no Math.random()
+js/save/        save.js, migrate.js, checksum.js
+js/ui/          screens, panels, dialogs, keys
+js/render/      canvas drawing
+assets/         fonts, sprites, sounds, icons
+tests/          node --test
+tools/          sim runner (bots in step 13)
+design/         the development steps document
+```
+
+## Put it online
+
+The game is static files only. Any static host works:
+
+- **cPanel:** upload everything except `node_modules/`, `tests/`, `tools/` and `design/` into `public_html/` (or a sub-folder) with the File Manager or FTP. PHP and MySQL are not needed.
+- **GitHub Pages** or **itch.io** (ZIP with `index.html` at the top level).
+
+The online site is a new origin: saves from `localhost` do not move to it.
+
+## Progress
+
+- [x] Step 1 – Skeleton
+- [x] Step 2 – Save and load
+- [ ] Step 3 – Money (needs the design document, sections 4, 6, 9)
+
+## Credits
+
+- Font: Atkinson Hyperlegible, © Braille Institute of America, SIL Open Font License 1.1 (`assets/fonts/OFL.txt`).

@@ -1,0 +1,93 @@
+/* Title screen, dialogs and save cards. */
+
+/* ---------- Title screen ---------- */
+.title-screen {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background:
+    radial-gradient(ellipse at 50% 110%, rgb(255 210 63 / 0.18), transparent 60%),
+    repeating-linear-gradient(0deg, transparent 0 31px, rgb(46 58 102 / 0.35) 31px 32px),
+    repeating-linear-gradient(90deg, transparent 0 31px, rgb(46 58 102 / 0.35) 31px 32px),
+    var(--c-bg);
+}
+.title-card {
+  width: min(460px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+.logo {
+  font-size: clamp(34px, 9vw, 56px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-align: center;
+  margin: 0;
+  color: var(--c-accent);
+  text-shadow: 0 0 18px rgb(255 210 63 / 0.55), 4px 4px 0 #000;
+}
+.logo .bolt { display: inline-block; transform: translateY(-2px); }
+.tagline { text-align: center; color: var(--c-text-dim); margin-bottom: 16px; }
+.menu-list { display: flex; flex-direction: column; gap: 10px; }
+.menu-list .btn { width: 100%; min-height: 52px; font-size: var(--fs); }
+.title-foot { text-align: center; margin-top: 12px; }
+
+/* ---------- Forms ---------- */
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label, .field legend { font-weight: 700; }
+fieldset.field { border: 0; padding: 0; margin: 0; }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.row { display: flex; gap: 8px; align-items: center; }
+.row > input { flex: 1; }
+.check { display: flex; gap: 10px; align-items: center; min-height: var(--touch); cursor: pointer; }
+.check input { width: 24px; height: 24px; accent-color: var(--c-accent); }
+.actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; margin-top: 4px; }
+.actions .btn { flex: 1 1 auto; }
+
+/* ---------- Dialogs ---------- */
+dialog.dlg {
+  width: min(520px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  padding: 20px;
+  border: var(--border);
+  border-color: var(--c-text-dim);
+  border-radius: 8px;
+  background: var(--c-surface);
+  color: var(--c-text);
+  box-shadow: var(--shadow);
+  overflow-y: auto;
+}
+dialog.dlg::backdrop { background: rgb(5 8 18 / 0.7); }
+dialog.dlg h2 { margin-bottom: 16px; }
+.dlg-body { display: flex; flex-direction: column; gap: var(--gap); }
+
+/* ---------- Save cards ---------- */
+.save-list { display: flex; flex-direction: column; gap: 10px; }
+.save-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border: var(--border);
+  border-radius: var(--radius);
+  background: var(--c-surface-2);
+}
+.save-card .who { font-weight: 700; }
+.save-card .info { font-size: var(--fs-small); color: var(--c-text-dim); grid-column: 1; }
+.save-card .btns { grid-row: 1 / span 3; grid-column: 2; display: flex; flex-direction: column; gap: 6px; }
+.save-card.empty .who { color: var(--c-text-dim); font-weight: 400; }
+.save-card.broken { border-color: var(--c-bad); }
+.save-card.broken .info { color: var(--c-bad); }
+.save-label { font-size: var(--fs-small); text-transform: uppercase; letter-spacing: 0.06em; color: var(--c-accent); }
+
+.note {
+  padding: 10px 12px;
+  border-left: 4px solid var(--c-info);
+  background: var(--c-surface-2);
+}
+.note.warn { border-color: var(--c-warn); }
