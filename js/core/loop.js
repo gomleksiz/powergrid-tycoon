@@ -35,7 +35,7 @@ export function createLoop({ onTick, onFrame = () => {} }) {
   }
 
   function setSpeed(s) {
-    if (!TIME.SPEEDS.includes(s)) return;
+    if (!TIME.SPEEDS.includes(s) && s !== TIME.DEBUG_SPEED) return;
     if (s > 0) lastSpeed = s;
     if (s === speed) return;
     speed = s;

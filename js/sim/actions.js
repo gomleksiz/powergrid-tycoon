@@ -145,6 +145,9 @@ export const ACTIONS = {
     refreshAvailable(state.tech.nodes);
   },
   'debug/cash': (state, amount) => { state.company.cash += amount; },
+  'debug/meter': (state, { key, value }) => {
+    if (key in state.meters) state.meters[key] = Math.max(0, Math.min(100, value));
+  },
   'debug/disaster': (state, { type, sector }) => {
     // Strike next week in the given sector.
     const base = type === 'heatwave' ? 0 : 40;

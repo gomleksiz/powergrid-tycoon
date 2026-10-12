@@ -1,7 +1,8 @@
 // All tunable numbers. No magic numbers in the code: add new ones here.
 // Section numbers point to the design document.
 
-export const GAME_VERSION = '0.3.0';
+export const GAME_VERSION = '1.0.0';
+// Locked at 1 for the release. Each later change to the state needs a migration (js/save/migrate.js).
 export const SAVE_VERSION = 1;
 
 export const TIME = {
@@ -11,6 +12,7 @@ export const TIME = {
   END_MONTH: 240,            // Dec 2049
   MONTH_SECONDS_AT_1X: 30,   // 1 month = 30 s at 1x
   SPEEDS: [0, 1, 2, 5],      // index 0 = pause
+  DEBUG_SPEED: 20,           // only in the debug panel (?debug=1)
   MAX_FRAME_MS: 250,         // clamp after a long frame (tab switch, debugger)
   MAX_TICKS_PER_FRAME: 8,    // stop a "spiral of death"
   HOURS_PER_MONTH: 720,

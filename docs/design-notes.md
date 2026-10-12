@@ -155,3 +155,12 @@ All numbers are in `js/data/`.
 ## Step 13 – Balance
 
 All number changes and their reasons are in `docs/balance-log.md`. The 1 rule change: the marketing budget is spread over the owned sectors in the new-customer and prosumer formulas.
+
+## Step 14 – Release
+
+| Topic | Choice | Where |
+| --- | --- | --- |
+| Debug panel | Only with `?debug=1`; F9 opens it. Speed 20x is only there. | `ui/debug.js` |
+| Version | `gameVersion` 1.0.0; `saveVersion` locked at 1. | `data/balance.js` |
+| Icons | Drawn in code (`node tools/make-icons.js`): 32, 180, 192, 512 px and a maskable 512 px icon. | `assets/icons/` |
+| Package | `npm run package` makes a ZIP with only the game files (no tests, tools or design). | `tools/package.js` |

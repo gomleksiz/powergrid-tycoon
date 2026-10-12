@@ -17,7 +17,7 @@ import { openSettings } from './ui/settings.js';
 import { openCredits } from './ui/credits.js';
 import { mountMapView } from './ui/mapView.js';
 import { setUi } from './ui/uiState.js';
-import { bindDebugKeys } from './ui/debug.js';
+import { bindDebug } from './ui/debug.js';
 import { mountReport } from './ui/report.js';
 import { mountPhaseBanner } from './ui/phaseBanner.js';
 import { mountEndScreen, mountLossBanners } from './ui/endScreen.js';
@@ -128,7 +128,7 @@ bindKeys({
   loop, isPlaying: isActive, onMenu: openMenu, onTab: showTab,
   onTree: () => openTechTree(), onNews: () => newsBar.openLog(), onMute: toggleMute,
 });
-bindDebugKeys();
+bindDebug(loop);
 
 // ---------- title ----------
 const title = mountTitle($('screen-root'), {
