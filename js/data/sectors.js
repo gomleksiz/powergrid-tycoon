@@ -11,14 +11,15 @@ export const MAP = {
   HOME_CELLS: [[1, 1], [2, 1]],  // Home Valley sits in the middle row, so it has 4 neighbors
 };
 
+// Possible customers: the section 5 table × 1.8 (balance step 13, see docs/balance-log.md).
 export const SECTOR_TYPES = {
-  town:       { count: 3, potential: { low: 3_000, medium: 500 }, hazard: {} },
-  suburb:     { count: 3, potential: { low: 1_000, medium: 2_500, high: 100 }, hazard: {} },
-  commercial: { count: 2, potential: { medium: 300, high: 600, corporate: 10 }, hazard: {} },
-  industrial: { count: 1, potential: { high: 200, corporate: 40 }, hazard: {} },
-  river:      { count: 1, potential: { low: 2_000, medium: 800 }, hazard: { flood: 3 } },
-  hills:      { count: 1, potential: { low: 1_500, medium: 600 }, hazard: { windstorm: 2 }, windBonus: 0.3 },
-  fault:      { count: 1, potential: { medium: 1_000, high: 300, corporate: 5 }, hazard: { earthquake: 4 } },
+  town:       { count: 3, potential: { low: 5_400, medium: 900 }, hazard: {} },
+  suburb:     { count: 3, potential: { low: 1_800, medium: 4_500, high: 180 }, hazard: {} },
+  commercial: { count: 2, potential: { medium: 540, high: 1_080, corporate: 18 }, hazard: {} },
+  industrial: { count: 1, potential: { high: 360, corporate: 72 }, hazard: {} },
+  river:      { count: 1, potential: { low: 3_600, medium: 1_440 }, hazard: { flood: 3 } },
+  hills:      { count: 1, potential: { low: 2_700, medium: 1_080 }, hazard: { windstorm: 2 }, windBonus: 0.3 },
+  fault:      { count: 1, potential: { medium: 1_800, high: 540, corporate: 9 }, hazard: { earthquake: 4 } },
 };
 
 export const HOME = { type: 'town', name: 'Home Valley' };

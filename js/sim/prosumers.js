@@ -6,7 +6,8 @@ import { sectorEffects } from './effects.js';
 import { fMarketing, roundChance } from './customers.js';
 
 export function updateProsumers(state, rng, marketingDollars, g) {
-  const fM = fMarketing(marketingDollars, state.staff.pr, g.prBonus);
+  const owned = Math.max(1, state.sectors.filter((s) => s.owned).length);
+  const fM = fMarketing(marketingDollars / owned, state.staff.pr, g.prBonus);
   let joined = 0;
   for (const s of state.sectors) {
     if (!s.owned) continue;
@@ -14,7 +15,7 @@ export function updateProsumers(state, rng, marketingDollars, g) {
     // Prosumers can never be more than the Low and Medium customers (they leave too).
     s.prosumers = Math.min(s.prosumers, homes);
     if (!sectorEffects(state, s).prosumer) continue;
-    const n = roundChance((homes - s.prosumers) * CUSTOMERS.NEW_RATE * fM, rng);
+    const n = roundChance((homes - s.prosumers) * CUSTOMERS.PROSUMER_RATE * fM, rng);
     s.prosumers = Math.min(homes, s.prosumers + n);
     joined += n;
   }

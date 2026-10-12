@@ -3,6 +3,8 @@
 import { TIERS, TIER_IDS, CUSTOMERS } from '../data/balance.js';
 import { SECTOR_TYPES } from '../data/sectors.js';
 
+const ownedCount = (state) => Math.max(1, state.sectors.filter((s) => s.owned).length);
+
 export function fMarketing(marketingDollars, prCount = 0, prBonus = 0) {
   const base = Math.min(CUSTOMERS.MKT_MAX, CUSTOMERS.MKT_BASE + marketingDollars / CUSTOMERS.MKT_DIVISOR);
   return base * (1 + prCount * CUSTOMERS.PR_MARKETING * (1 + prBonus));
@@ -38,7 +40,8 @@ export function roundChance(x, rng) {
 // New and lost customers in every owned sector. Returns totals for the report.
 // ctx: { fx (global effects), budget (budget dollars), cs }
 export function updateCustomers(state, rng, ctx) {
-  const fM = fMarketing(ctx.budget.marketing, state.staff.pr, ctx.fx.prBonus);
+  // The marketing budget is spread over the owned sectors (balance step 13).
+  const fM = fMarketing(ctx.budget.marketing / ownedCount(state), state.staff.pr, ctx.fx.prBonus);
   const fC = fCS(ctx.cs);
   const out = { gained: 0, lost: 0, byTier: {} };
   for (const t of TIER_IDS) out.byTier[t] = { gained: 0, lost: 0 };

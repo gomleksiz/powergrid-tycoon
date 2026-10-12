@@ -44,6 +44,7 @@ export const PRICE = { MIN: 0.6, MAX: 1.5, STEP: 0.05, START: 1.0, LOW_GS_MAX: 1
 
 export const CUSTOMERS = {
   NEW_RATE: 0.02,
+  PROSUMER_RATE: 0.008,      // share of non-prosumer homes that add solar each month × F marketing
   MKT_BASE: 0.5,
   MKT_DIVISOR: 20_000,
   MKT_MAX: 2.0,
