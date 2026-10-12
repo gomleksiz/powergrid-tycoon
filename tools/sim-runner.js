@@ -18,8 +18,13 @@ function parseArgs(argv) {
 const args = parseArgs(process.argv.slice(2));
 setState(createState(args.seed, args.difficulty, { companyName: 'Sim' }));
 
-const rows = ['month,date'];
-on('month:end', ({ month }) => rows.push(`${month},${dateLabel(month)}`));
+const COLUMNS = ['month', 'date', 'cash', 'debt', 'customers', 'revenue', 'net', 'wholesale'];
+const rows = [COLUMNS.join(',')];
+on('month:end', ({ month, report }) => {
+  const s = getState();
+  rows.push([month, dateLabel(month), Math.round(s.company.cash), s.company.debt, report.customers.end,
+    Math.round(report.money.revenue), Math.round(report.money.net), report.money.price.toFixed(4)].join(','));
+});
 
 while (getState().time.month <= args.months) dispatch({ type: 'time/week' });
 

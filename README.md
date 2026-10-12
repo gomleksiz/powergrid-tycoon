@@ -43,7 +43,8 @@ js/render/      canvas drawing
 assets/         fonts, sprites, sounds, icons
 tests/          node --test
 tools/          sim runner (bots in step 13)
-design/         the development steps document
+design/         the design document and the development steps
+docs/           design-notes.md: choices where the design leaves a gap
 ```
 
 ## Put it online
@@ -59,7 +60,8 @@ The online site is a new origin: saves from `localhost` do not move to it.
 
 - [x] Step 1 – Skeleton
 - [x] Step 2 – Save and load
-- [ ] Step 3 – Money (needs the design document, sections 4, 6, 9)
+- [x] Step 3 – Money
+- [ ] Step 4 – Map and pixel art
 
 ## Credits
 

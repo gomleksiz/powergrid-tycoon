@@ -11,6 +11,9 @@ import { openSaveScreen } from './ui/loadScreen.js';
 import { openPauseMenu } from './ui/pauseMenu.js';
 import { openSettings } from './ui/settings.js';
 import { mountMapCanvas } from './render/mapCanvas.js';
+import { mountReport } from './ui/report.js';
+import { createBudgetPanel } from './ui/panels/budget.js';
+import { createCustomersPanel } from './ui/panels/customers.js';
 
 const $ = (id) => document.getElementById(id);
 const app = $('app');
@@ -39,12 +42,14 @@ function openMenu() {
   });
 }
 
+// Tab order from design section 15. More panels join in later steps.
 const panel = mountSidepanel({
   panel: $('sidepanel'),
   scrim: $('scrim'),
   bottombar: $('bottombar'),
-  onMenu: openMenu,
+  panels: [createBudgetPanel(), createCustomersPanel()],
 });
+mountReport($('map-area'));
 
 mountTopbar($('topbar'), { loop, onMenu: openMenu, onTogglePanel: () => panel.toggle() });
 bindKeys({ loop, isPlaying: isActive, onMenu: openMenu });
@@ -63,6 +68,7 @@ on('game:start', () => {
   document.activeElement?.blur(); // focus must not stay in the hidden title screen
   map ??= mountMapCanvas($('map'));
   map.resize();
+  panel.refresh();
 });
 
 on('game:quit', () => {

@@ -1,0 +1,66 @@
+// Difficulty values (design section 4). Tune here, not in the code.
+
+export const DIFFICULTY = {
+  easy: {
+    startCash: 250_000,
+    startCustomers: 2_400,
+    wholesaleStart: 0.045,      // $ per kWh in month 1
+    disasterMult: 0.5,
+    warningWeeks: 2,
+    warningNeedsTech: false,    // warning always, even without Weatherproof Sensors
+    firstRivalMonth: 80,
+    rivalGrowth: 0.5,
+    meterUp: 0.25,
+    meterDown: 0.10,
+    bankruptMonths: 6,
+    loanLimit: 500_000,
+    victoryCash: 30_000_000,
+    victoryShare: 0.80,
+    scoreMult: 0.75,
+    advisorAlways: true,
+    tutorialDefault: true,
+    confirmRisky: true,         // ask before a risky action
+  },
+  normal: {
+    startCash: 150_000,
+    startCustomers: 2_000,
+    wholesaleStart: 0.05,
+    disasterMult: 1.0,
+    warningWeeks: 1,
+    warningNeedsTech: true,
+    firstRivalMonth: 55,
+    rivalGrowth: 1.0,
+    meterUp: 0.20,
+    meterDown: 0.20,
+    bankruptMonths: 3,
+    loanLimit: 300_000,
+    victoryCash: 50_000_000,
+    victoryShare: 0.90,
+    scoreMult: 1.0,
+    advisorAlways: false,
+    tutorialDefault: true,
+    confirmRisky: false,
+  },
+  hard: {
+    startCash: 80_000,
+    startCustomers: 1_600,
+    wholesaleStart: 0.055,
+    disasterMult: 1.5,
+    warningWeeks: 1,
+    warningNeedsTech: true,
+    firstRivalMonth: 40,
+    rivalGrowth: 1.5,
+    meterUp: 0.15,
+    meterDown: 0.30,
+    bankruptMonths: 2,
+    loanLimit: 150_000,
+    victoryCash: 75_000_000,
+    victoryShare: 0.95,
+    scoreMult: 1.5,
+    advisorAlways: false,
+    tutorialDefault: false,
+    confirmRisky: false,
+  },
+};
+
+export const diff = (state) => DIFFICULTY[state.difficulty] ?? DIFFICULTY.normal;

@@ -2,7 +2,9 @@
 
 import { emit } from './bus.js';
 import { ACTIONS } from '../sim/actions.js';
-import { DEFAULT_DIFFICULTY } from '../data/balance.js';
+import { DEFAULT_DIFFICULTY, PRICE, BUDGET, STAFF, METERS } from '../data/balance.js';
+import { DIFFICULTY } from '../data/difficulty.js';
+import { createSectors, createTech } from '../sim/setup.js';
 
 let state = null;
 const subscribers = new Set();
@@ -10,14 +12,37 @@ const subscribers = new Set();
 // Every state field needs a start value here, so old saves can be filled in.
 export function createState(seed, difficulty = DEFAULT_DIFFICULTY, options = {}) {
   const s = seed >>> 0;
+  const d = DIFFICULTY[difficulty] ?? DIFFICULTY[DEFAULT_DIFFICULTY];
+  const { sectors, nextId } = createSectors(s, d.startCustomers);
   return {
     seed: s,
     difficulty,
-    company: { name: options.companyName ?? '' },
     rng: s,
+    nextId,
+    company: {
+      name: options.companyName ?? '',
+      cash: d.startCash,
+      debt: 0,
+      lastRevenue: 0,
+      lastNet: 0,
+      capexThisMonth: 0,
+      capexTotal: 0,
+    },
     time: { month: 1, week: 1 },
+    prices: { low: PRICE.START, medium: PRICE.START, high: PRICE.START, corporate: PRICE.START },
+    budget: {
+      totalPct: BUDGET.START_PCT,
+      split: { ...BUDGET.START_SPLIT },
+      locks: Object.fromEntries(BUDGET.KEYS.map((k) => [k, false])),
+    },
+    staff: { ...STAFF.START, wageMult: 1 },
+    market: { walk: 1, eventMult: 1 },
+    meters: { ...METERS.START },
+    sectors,
+    tech: createTech(),
     tutorial: { enabled: options.tutorial ?? false, step: 0 },
-    history: [],
+    history: { cash: [], customers: [], revenue: [], net: [] },
+    report: null,
   };
 }
 

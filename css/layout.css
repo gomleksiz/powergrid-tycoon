@@ -60,22 +60,13 @@
   grid-area: side;
   background: var(--c-surface);
   border-left: var(--border);
-  overflow-y: auto;
-  padding: var(--gap);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: var(--gap);
   min-height: 0;
 }
-.panel-head { display: none; align-items: center; justify-content: space-between; }
-.panel-box {
-  border: var(--border);
-  border-radius: var(--radius);
-  background: var(--c-surface-2);
-  padding: var(--gap);
-  min-height: 120px;
-}
-.panel-box.flash { border-color: var(--c-accent); }
+.panel-head { display: none; align-items: center; justify-content: space-between; padding: 8px var(--gap) 0; }
+.panel-scroll { flex: 1; overflow-y: auto; padding: var(--gap); overscroll-behavior: contain; }
 .scrim { display: none; }
 
 /* ---------- News bar ---------- */
@@ -150,7 +141,10 @@
   }
   .topbar { gap: 6px; padding: 0 6px; }
   .topbar .company,
-  .topbar .panel-toggle { display: none; }
+  .topbar .customers,
+  .topbar .panel-toggle,
+  .speeds .speed-n { display: none; }
+  .speeds .btn.speed-cycle { display: inline-flex; align-items: center; justify-content: center; }
   .topbar .date { min-width: 76px; }
   .speeds .btn { min-width: 40px; padding: 4px; }
 

@@ -20,10 +20,16 @@ export function migrate(state, fromVersion, migrations = MIGRATIONS) {
 
 export function fillDefaults(target, defaults) {
   for (const [key, value] of Object.entries(defaults)) {
-    if (target[key] === undefined) {
+    // Missing, or an old field with a different shape: take the start value.
+    if (target[key] === undefined || (isPlainObject(value) && Array.isArray(target[key]))) {
       target[key] = value;
     } else if (isPlainObject(value) && isPlainObject(target[key])) {
       fillDefaults(target[key], value);
+    } else if (Array.isArray(value) && Array.isArray(target[key])) {
+      // Lists of objects (for example the sectors): fill each item.
+      target[key].forEach((item, i) => {
+        if (isPlainObject(item) && isPlainObject(value[i])) fillDefaults(item, value[i]);
+      });
     }
   }
   return target;

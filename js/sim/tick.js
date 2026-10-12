@@ -2,21 +2,67 @@
 // Each function changes the state and returns a list of events.
 
 import { TIME } from '../data/balance.js';
+import { monthlyMoney, budgetDollars, stepWalk, emergencyLoan, totalCustomers } from './economy.js';
+import { updateCustomers } from './customers.js';
+import { globalEffects } from './effects.js';
 
-export function weekTick(state) {
+export function weekTick(state, rng) {
   const events = [{ type: 'week:end', payload: { ...state.time } }];
   state.time.week += 1;
   if (state.time.week > TIME.WEEKS_PER_MONTH) {
     state.time.week = 1;
-    events.push(...monthTick(state));
+    events.push(...monthTick(state, rng));
   }
   return events;
 }
 
-export function monthTick(state) {
-  const ended = state.time.month;
+// The month steps in the order of design section 2.
+export function monthTick(state, rng) {
+  const events = [];
+  const month = state.time.month;
+  const fx = globalEffects(state);
+  const budget = budgetDollars(state);
+  const start = { cash: state.company.cash, customers: totalCustomers(state), meters: { ...state.meters } };
+
+  // 1. Collect money
+  const money = monthlyMoney(state, { capexCredit: state.company.capexThisMonth * fx.capexTaxCredit });
+  state.company.cash += money.net;
+  state.company.lastRevenue = money.revenue;
+  state.company.lastNet = money.net;
+
+  // Customers come and go
+  const customers = updateCustomers(state, rng, { fx, budget, cs: state.meters.cs });
+
+  // Wholesale price for next month
+  stepWalk(state, rng);
+
+  // Emergency loan when cash < $0
+  const loan = emergencyLoan(state);
+  if (loan > 0) events.push({ type: 'news', payload: { key: 'emergencyLoan', amount: loan, kind: 'warn' } });
+
+  // 7. Report and history
+  state.report = {
+    month,
+    money,
+    budget,
+    customers: { start: start.customers, end: totalCustomers(state), ...customers },
+    cash: { start: start.cash, end: state.company.cash },
+    loan,
+  };
+  pushHistory(state, money);
+
+  state.company.capexThisMonth = 0;
   state.time.month += 1;
-  return [{ type: 'month:end', payload: { month: ended } }];
+  events.push({ type: 'month:end', payload: { month, report: state.report } });
+  return events;
+}
+
+function pushHistory(state, money) {
+  const h = state.history;
+  h.cash.push(Math.round(state.company.cash));
+  h.customers.push(totalCustomers(state));
+  h.revenue.push(Math.round(money.revenue));
+  h.net.push(Math.round(money.net));
 }
 
 export function isGameOver(state) {

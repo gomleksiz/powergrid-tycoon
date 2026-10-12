@@ -59,6 +59,7 @@ body {
   font-family: var(--font);
   font-size: var(--fs);
   line-height: var(--lh);
+  letter-spacing: 0.02em;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
   overflow: hidden;
@@ -68,7 +69,8 @@ body {
 
 h1, h2, h3 { line-height: 1.2; margin: 0 0 var(--gap); }
 h2 { font-size: var(--fs-big); }
-h3 { font-size: var(--fs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--c-text-dim); }
+h3 { font-size: var(--fs); color: var(--c-accent); }
+h4 { font-size: var(--fs-small); margin: 12px 0 4px; color: var(--c-text-dim); }
 p { margin: 0 0 var(--gap); }
 
 button,

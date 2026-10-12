@@ -83,7 +83,7 @@ dialog.dlg h2 { margin-bottom: 16px; }
 .save-card.empty .who { color: var(--c-text-dim); font-weight: 400; }
 .save-card.broken { border-color: var(--c-bad); }
 .save-card.broken .info { color: var(--c-bad); }
-.save-label { font-size: var(--fs-small); text-transform: uppercase; letter-spacing: 0.06em; color: var(--c-accent); }
+.save-label { font-size: var(--fs-small); font-weight: 700; color: var(--c-accent); }
 
 .note {
   padding: 10px 12px;

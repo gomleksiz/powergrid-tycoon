@@ -11,18 +11,88 @@ export const T = {
   play: 'Play',
   speedLabel: (s) => `${s}x`,
   speedAria: (s) => (s === 0 ? 'Pause' : `Speed ${s}x`),
+  speedCycle: (s) => `Speed ${s}x. Tap to change.`,
   week: (w) => `Week ${w}`,
   menu: 'Menu',
   panel: 'Panel',
   cash: 'Cash',
 
-  // Side panel placeholders
-  panelBudget: 'Budget',
-  panelSector: 'Sector',
-  panelMeters: 'Meters',
-  panelEmpty: 'Coming soon.',
+  // Side panel tabs
+  tabs: {
+    sector: 'Sector', budget: 'Budget', research: 'Research', projects: 'Projects',
+    staff: 'Staff', customers: 'Customers', rivals: 'Rivals', goals: 'Goals',
+  },
+  moreTabs: 'More',
   mapPlaceholder: 'The map comes in step 4.',
   closePanel: 'Close',
+
+  // Sliders
+  less: (label) => `Less ${label}`,
+  more: (label) => `More ${label}`,
+  lockSlider: (label) => `Lock ${label}`,
+  unlockSlider: (label) => `Unlock ${label}`,
+
+  // Budget panel
+  budgetTitle: 'Budget',
+  budgetTotal: 'Total budget',
+  budgetTotalHelp: (pct, base) => `${pct}% of last month's revenue (${base}).`,
+  budgetSplit: 'Split the budget',
+  budgetSplitHelp: 'The 5 parts always add up to 100%. Lock a part to keep it.',
+  budgetKeys: { marketing: 'Marketing', rd: 'R&D materials', maintenance: 'Maintenance', lobbying: 'Lobbying', pr: 'PR' },
+  budgetKeyHelp: {
+    marketing: 'Brings new customers.',
+    rd: 'Makes research faster.',
+    maintenance: 'Keeps the lines healthy.',
+    lobbying: 'Raises Government Satisfaction.',
+    pr: 'Raises Customer Satisfaction.',
+  },
+  perMonth: (v) => `${v} a month`,
+  pricesTitle: 'Prices',
+  pricesHelp: 'A low price brings customers. A high price brings money, but customers leave.',
+  tierNames: { low: 'Low', medium: 'Medium', high: 'High', corporate: 'Corporate' },
+  tierLong: { low: 'Residential Basic', medium: 'Suburban', high: 'Commercial', corporate: 'Industrial' },
+  tierLocked: (tech) => `Locked. Research ${tech}.`,
+  priceBill: (bill) => `${bill} a month for each customer`,
+  priceCapped: 'GS is below 30: the price can be 1.1× at most.',
+  loansTitle: 'Loans',
+  loanInfo: (debt, limit) => `Debt ${debt} of ${limit}.`,
+  loanInterest: (v) => `Interest: ${v} a month (1%).`,
+  takeLoan: (v) => `Borrow ${v}`,
+  repayLoan: (v) => `Pay back ${v}`,
+  riskyPrice: 'This price will make customers leave. Continue?',
+
+  // Customers panel
+  customersTitle: 'Customers',
+  customersTotal: (n) => `${n} customers`,
+  colTier: 'Tier',
+  colCustomers: 'Customers',
+  colPrice: 'Price',
+  colRevenue: 'Bill / month',
+  colLimit: 'Outage limit',
+  lastMonthChange: (g, l) => `Last month: +${g} new, −${l} left.`,
+  potentialInfo: (n) => `${n} homes and firms could buy from you in your sectors.`,
+
+  // Top bar
+  cashAria: (cash, delta) => `Cash ${cash}. Last month ${delta}.`,
+  customersAria: (n) => `${n} customers`,
+
+  // Monthly report
+  reportTitle: (label) => `Report: ${label}`,
+  moneyIn: 'Money in',
+  moneyOut: 'Money out',
+  revenue: 'Customers paid',
+  withheld: 'Withheld by High tier',
+  energy: 'Energy',
+  wages: 'Wages',
+  upkeep: 'Upkeep',
+  budget: 'Budget',
+  interest: 'Loan interest',
+  penalties: 'Penalties and fines',
+  tax: 'Tax',
+  net: 'Net',
+  customersLine: (g, l) => `Customers: +${g} new, −${l} left`,
+  wholesaleLine: (p) => `Wholesale price: ${p} per kWh`,
+  closeReport: 'Close report',
 
   // Difficulty
   difficulty: { easy: 'Easy', normal: 'Normal', hard: 'Hard' },
@@ -87,4 +157,9 @@ export const T = {
   welcome: (name) => `Welcome, CEO of ${name}! Press Space or ▶ to start the clock.`,
   monthEnd: (label) => `${label} has ended.`,
   tabPaused: 'Game paused while the tab was hidden.',
+
+  // News from the simulation (key → text)
+  news: {
+    emergencyLoan: ({ amount }) => `Cash went below $0. The bank gave an emergency loan of ${amount}.`,
+  },
 };

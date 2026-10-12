@@ -46,6 +46,7 @@ export function createLoop({ onTick, onFrame = () => {} }) {
     advance,
     setSpeed,
     getSpeed: () => speed,
+    lastSpeed: () => lastSpeed,
     togglePause: () => setSpeed(speed === 0 ? lastSpeed : 0),
     reset: () => { acc = 0; setSpeed(0); },
     start() {
