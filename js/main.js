@@ -27,6 +27,7 @@ import { NODES } from './data/techTree.js';
 import { getState } from './core/store.js';
 import { news } from './core/session.js';
 import { T } from './data/text.js';
+import { showEventCard, showWarning, showDisasterReport } from './ui/modals.js';
 
 const $ = (id) => document.getElementById(id);
 const app = $('app');
@@ -106,6 +107,7 @@ on('game:start', () => {
   map.start();
   panel.show('sector');
   if (getState().time.month === 1 && getState().time.week === 1) phaseBanner.show(1);
+  if (getState().events.pending) showEventCard(getState().events.pending.id);   // a card from before the save
 });
 
 // A project is done: a news line, and a pause if the player wants it.
@@ -115,6 +117,22 @@ on('project:done', (p) => {
   else if (p.kind === 'deploy') news(T.news.deployDone({ name: NODES[p.node].name, sector: s.sectors[p.sector].name }));
   else news(T.news.buildDone({ building: p.type, sector: s.sectors[p.sector].name }));
   if (getPrefs().autoPauseProject) loop.setSpeed(0);
+});
+
+// Auto-pause on warnings, disasters and event cards (design section 3).
+on('disaster:warning', (w) => {
+  loop.setSpeed(0);
+  news(T.news.warning({ name: T.disasterNames[w.type], weeks: w.weeks }), 'warn');
+  showWarning(w);
+});
+on('disaster:hit', (r) => {
+  loop.setSpeed(0);
+  news(T.news.disaster({ name: T.disasterNames[r.type] }), 'error');
+  showDisasterReport(r);
+});
+on('event:card', ({ id }) => {
+  loop.setSpeed(0);
+  showEventCard(id);
 });
 
 on('game:quit', () => {

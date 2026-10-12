@@ -44,7 +44,7 @@ export function mountReport(root, { isEnabled = () => true } = {}) {
         const why = r.meters.reasons[k] ? T.meterParts[k][r.meters.reasons[k]] : '';
         return h('div', { class: b > a ? 'good' : b < a ? 'bad' : 'dim' }, T.meterLine(T.meterShort[k], a, b, a === b ? '' : why));
       })) : null,
-      r.staffCosts > 0 ? h('p', { class: 'dim small' }, T.staffCostsLine(money(r.staffCosts))) : null,
+      r.otherCosts > 0 ? h('p', { class: 'dim small' }, T.otherCostsLine(money(r.otherCosts))) : null,
       r.capex > 0 ? h('p', { class: 'dim small' }, T.capexLine(money(r.capex))) : null,
       h('p', { class: 'dim small' }, T.wholesaleLine(`$${m.price.toFixed(3)}`)),
     );

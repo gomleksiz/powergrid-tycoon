@@ -14,6 +14,8 @@ import { startResearch, cancelResearch, clampTeams, scheduleResearch } from './r
 import { startDeploy, cancelField, activateOneTime } from './deployment.js';
 import { hire, fire, setWage, rush } from './staffing.js';
 import { openSector } from './growth.js';
+import { stormPrep } from './disasters.js';
+import { chooseEvent } from './eventCards.js';
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const roundStep = (v, step) => Math.round(v / step) * step;
@@ -66,6 +68,9 @@ export const ACTIONS = {
     return [];
   },
 
+  'disaster/prep': (state, { sector }) => { stormPrep(state, sector); },
+  'event/choose': (state, { choice }) => { chooseEvent(state, choice); },
+
   'sector/priority': (state, { sector, priority }) => {
     const s = state.sectors[sector];
     if (s && REPAIR.PRIORITIES.includes(priority)) s.priority = priority;
@@ -111,6 +116,13 @@ export const ACTIONS = {
     refreshAvailable(state.tech.nodes);
   },
   'debug/cash': (state, amount) => { state.company.cash += amount; },
+  'debug/disaster': (state, { type, sector }) => {
+    // Strike next week in the given sector.
+    const base = type === 'heatwave' ? 0 : 40;
+    const next = state.time.week + 1 > 4 ? { month: state.time.month + 1, week: 1 } : { month: state.time.month, week: state.time.week + 1 };
+    state.disasters.scheduled.push({ id: state.nextId++, type, ...next, hits: [{ sector, base }], warned: false });
+  },
+  'debug/event': (state, id) => { state.events.pending = { id, month: state.time.month }; return [{ type: 'event:card', payload: { id } }]; },
   'debug/month': (state, month) => {
     state.time.month = Math.max(1, Math.min(240, Math.round(month)));
     state.time.week = 1;

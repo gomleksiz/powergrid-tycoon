@@ -91,6 +91,11 @@ export function researchWeek(state) {
   scheduleResearch(state);
   const perTeamWeek = rpPerTeamMonth(state) / 4;
   const done = [];
+  const first = researchProjects(state).find((p) => p.teams > 0);
+  if (first && state.tech.bankRp > 0) {
+    state.tech.nodes[first.node].rp += state.tech.bankRp;   // RP from an event card
+    state.tech.bankRp = 0;
+  }
   for (const p of researchProjects(state)) {
     if (p.teams <= 0) continue;
     const node = state.tech.nodes[p.node];

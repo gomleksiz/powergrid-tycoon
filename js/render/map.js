@@ -8,6 +8,7 @@ import { mapgen, TILE, sectorBounds } from '../sim/mapgen.js';
 import { drawSprite, spritesReady } from './sprites.js';
 import { drawViewOverlay, drawViewIcons } from './views.js';
 import { drawPowerLines } from './particles.js';
+import { drawWeather } from './weather.js';
 
 const T = MAP.TILE;
 
@@ -198,6 +199,7 @@ export function createMapRenderer(canvas, camera) {
     drawBuildings(state, now);
     drawViewOverlay(ctx, state, ui, now);
     drawLocked(state);
+    drawWeather(ctx, state, now, { motion: !reducedMotion() });
     drawViewIcons(ctx, state, ui, now);
     drawSelection(ui);
     drawGhost(ui, now);

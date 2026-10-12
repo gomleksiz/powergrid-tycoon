@@ -51,11 +51,19 @@ export function repairOrder(state) {
 
 // 1 week: count the damage hours, then repair. Returns the points used.
 export function repairWeek(state) {
+  let points = repairPower(state);
+  const used = points;
+  // Storm Prep: the crews wait near the sector, so they repair before the outage hours count.
+  for (const s of state.sectors) {
+    if (!s.prepRepair) continue;
+    const fix = Math.min(points, s.damage);
+    s.damage = Math.max(0, +(s.damage - fix).toFixed(4));
+    points -= fix;
+    s.prepRepair = false;
+  }
   for (const s of state.sectors) {
     if (s.owned && s.damage > 0) s.dmgHours += TIME.HOURS_PER_WEEK * (s.damage / 100);
   }
-  let points = repairPower(state);
-  const used = points;
   for (const s of repairOrder(state)) {
     if (points <= 0) break;
     const fix = Math.min(points, s.damage);

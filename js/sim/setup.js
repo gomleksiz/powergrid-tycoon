@@ -28,6 +28,7 @@ export function createSector(def) {
     buildings: [],
     tech: {},            // per-sector deploy status, e.g. { D2: 'ACTIVE' }
     prep: false,         // Storm Prep paid
+    prepRepair: false,   // a prepped sector was hit: crews repair at once
     rival: null,
   };
 }
@@ -58,7 +59,7 @@ export function createTech() {
     nodes[id] = { status: NODES[id].start ? STATUS.ACTIVE : STATUS.LOCKED, rp: 0, leap: false };
   }
   refreshAvailable(nodes);
-  return { nodes };
+  return { nodes, bankRp: 0 };
 }
 
 // LOCKED → AVAILABLE when all prerequisites are done (or the leap source is done).

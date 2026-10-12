@@ -273,6 +273,49 @@ export const T = {
   prosumersLine: (n, pct) => `Prosumers (rooftop solar): ${n} homes (${pct} of Low and Medium).`,
   tierLetters: { low: 'L', medium: 'M', high: 'H', corporate: 'C' },
 
+  // Disasters
+  disasterNames: {
+    windstorm: 'Windstorm', ice: 'Ice storm', flood: 'Flash flood', earthquake: 'Earthquake',
+    heatwave: 'Heatwave', superstorm: 'Storm of the Decade',
+  },
+  disasterIcons: { windstorm: '🌪', ice: '🧊', flood: '🌊', earthquake: '⚡', heatwave: '🔥', superstorm: '🌀' },
+  warningTitle: (name, weeks) => `Warning: ${name} in ${weeks} week${weeks === 1 ? '' : 's'}`,
+  warningHits: (list) => `It will hit: ${list}.`,
+  warningNotYours: 'It will not hit your sectors.',
+  prepHelp: (cost) => `Storm Prep costs ${cost} for each sector: damage − 20%, and crews start the repair at once.`,
+  prepButton: (name, cost) => `Storm Prep in ${name} (${cost})`,
+  prepDone: (name) => `${name}: ready ✓`,
+  prepInSector: (name, weeks) => `${name} in ${weeks} week${weeks === 1 ? '' : 's'}.`,
+  stormPrep: (cost) => `Storm Prep (${cost})`,
+  reportTitleDisaster: (name) => `Disaster report: ${name}`,
+  disasterLine: (name, dmg) => `${name}: ${dmg} damage.`,
+  savedLine: (techs, n) => `${techs} saved ${n} damage points.`,
+  prepSaved: 'Storm Prep helped.',
+  noOwnedHit: 'It did not hit your sectors. No damage.',
+  repairTime: (w) => `Repair time with your crews: about ${w} week${w === 1 ? '' : 's'}.`,
+  repairNone: 'No free technicians! Hire technicians or turn on "Repair first".',
+  heatText: 'Peak load + 25% this month. The wholesaler gives only 85% of the power. Batteries, the VPP and your own plants help.',
+  quakeFission: 'Fission plants in hit sectors stop for 2 months.',
+
+  // Event cards
+  eventTitle: 'Event',
+  cards: {
+    fuelCrisis: { title: 'Fuel crisis', text: 'Gas and coal prices jump. Wholesale power costs 1.5 times more for 3 months.',
+      choices: ['Pay the higher cost', 'Raise prices 10% for 3 months (CS − 5)'] },
+    evChargers: { title: 'The city wants EV chargers', text: 'The mayor asks you to build free chargers for electric cars.',
+      choices: ['Pay $100,000 (GS + 8)', 'Say no (GS − 3)'] },
+    unionRaise: { title: 'The union asks for a raise', text: 'Your workers ask for a 5% raise.',
+      choices: ['Yes (ES + 10, wages + 5%)', 'No (ES − 10)'] },
+    university: { title: 'Research deal', text: 'A university offers to help your engineers.',
+      choices: ['Pay $50,000 (+ 300 RP)', 'Say no'] },
+    reporter: { title: 'A reporter found an old outage', text: 'A news story says that you hid an old outage.',
+      choices: ['Public apology (CS + 3, GS − 2)', 'No comment (CS − 5)'] },
+    supplyCrunch: { title: 'Supply crunch', text: 'The wholesaler is short of power for 2 months.',
+      choices: ['Pay extra for full supply (wholesale × 1.3)', 'Take 85% of the power (outages, unless you have plants or batteries)'] },
+    publicPetition: { title: 'Public petition', text: 'Many customers sign a petition against your service.',
+      choices: ['Cut prices 10% for 3 months (CS + 5)', 'Ignore it (CS − 3, GS − 3)'] },
+  },
+
   // Monthly report
   reportTitle: (label) => `Report: ${label}`,
   moneyIn: 'Money in',
@@ -290,7 +333,7 @@ export const T = {
   customersLine: (g, l) => `Customers: +${g} new, −${l} left`,
   wholesaleLine: (p) => `Wholesale price: ${p} per kWh`,
   closeReport: 'Close report',
-  staffCostsLine: (v) => `Also paid: hiring, firing and rush ${v}`,
+  otherCostsLine: (v) => `Also paid (hiring, rush, storm prep, events): ${v}`,
   capexLine: (v) => `Investments this month: ${v}`,
 
   // Difficulty
@@ -363,6 +406,8 @@ export const T = {
     buildDone: ({ building, sector }) => `The new ${T.buildings[building] ?? building} in ${sector} is ready.`,
     buildFailed: ({ reason }) => T.buildReasons[reason] ?? T.buildReasons.blocked,
     lineFailure: ({ sector }) => `A worn line broke in ${sector}. Crews will repair it.`,
+    warning: ({ name, weeks }) => `Warning: ${name} in ${weeks} week${weeks === 1 ? '' : 's'}.`,
+    disaster: ({ name }) => `${name}! See the disaster report.`,
     contractLost: ({ sector, count }) => `${count} Corporate contract${count === 1 ? '' : 's'} ended in ${sector} after outages. You paid a penalty.`,
     sectorOpened: ({ sector }) => `You opened ${sector}. Customers will come with marketing.`,
     strike: () => 'Strike! Employees are unhappy. Repair and field work are 50% slower this month.',

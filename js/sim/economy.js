@@ -45,7 +45,7 @@ export function customersByTier(state) {
 export function sectorRevenue(state, sector) {
   let r = 0;
   for (const t of TIER_IDS) r += sector.customers[t] * TIERS[t].tariff * state.prices[t];
-  return r * (1 - (sector.discount ?? 0));
+  return r * (1 - (sector.discount ?? 0)) * state.market.priceMult;
 }
 
 export function projectedRevenue(state) {

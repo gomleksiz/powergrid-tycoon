@@ -14,10 +14,15 @@ import { updateMeters } from './satisfaction.js';
 import { marketShare } from './economy.js';
 import { withheldHigh, corporateContracts, checkPhase } from './growth.js';
 import { updateProsumers } from './prosumers.js';
+import { disasterWeek, rollDisasters, monthDisasters } from './disasters.js';
+import { rollEventCard } from './eventCards.js';
+import { tickMods } from './market.js';
+import { DISASTER } from '../data/disasters.js';
 
 export function weekTick(state, rng) {
   const events = [{ type: 'week:end', payload: { ...state.time } }];
   events.push(...staffArrive(state));
+  events.push(...disasterWeek(state));
   for (const id of researchWeek(state)) events.push({ type: 'project:done', payload: { kind: 'research', node: id } });
   for (const p of deployWeek(state)) events.push({ type: 'project:done', payload: { kind: p.kind, node: p.node, type: p.type, sector: p.sector } });
   repairWeek(state);
@@ -74,6 +79,12 @@ export function monthTick(state, rng) {
   const meters = updateMeters(state, rng);
   events.push(...meters.events);
   state.govt.finesDue = meters.fine;
+
+  // 6. Outside events: disasters for 2 months later, event cards
+  tickMods(state);
+  monthDisasters(state);
+  rollDisasters(state, rng, month + DISASTER.SCHEDULE_AHEAD);
+  events.push(...rollEventCard(state, rng));
   for (const s of state.sectors) s.dmgHours = 0;
 
   // Wholesale price for next month
@@ -96,10 +107,10 @@ export function monthTick(state, rng) {
   };
   pushHistory(state, money);
 
-  state.report.staffCosts = state.company.staffCostsThisMonth;
+  state.report.otherCosts = state.company.otherCostsThisMonth;
   state.report.capex = state.company.capexThisMonth;
   state.company.capexThisMonth = 0;
-  state.company.staffCostsThisMonth = 0;
+  state.company.otherCostsThisMonth = 0;
   state.time.month += 1;
   events.push({ type: 'month:end', payload: { month, report: state.report } });
   events.push(...checkPhase(state));

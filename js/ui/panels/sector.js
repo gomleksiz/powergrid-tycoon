@@ -16,11 +16,14 @@ import { dispatch } from '../../core/store.js';
 import { sectorStatus, capacityMw, peakMw } from '../../sim/grid.js';
 import { REPAIR, TIERS as TIER_DATA } from '../../data/balance.js';
 import { canOpenSector, openCost } from '../../sim/growth.js';
+import { warningsFor, canPrep, weekIndex } from '../../sim/disasters.js';
+import { DISASTER } from '../../data/disasters.js';
 
 export function createSectorPanel({ onBuild }) {
   const head = h('div', { class: 'sector-head' });
   const info = h('div');
   const openBox = h('div');
+  const warnBox = h('div');
   const customers = h('div');
   const buildings = h('div');
   const grid = h('div');
@@ -31,7 +34,7 @@ export function createSectorPanel({ onBuild }) {
   const build = h('div', { class: 'build-list' });
 
   const el = h('div', { class: 'panel-body' },
-    h('section', { class: 'card' }, head, info, openBox),
+    h('section', { class: 'card' }, head, warnBox, info, openBox),
     h('section', { class: 'card grid-card' }, h('h3', {}, T.gridTitle), grid,
       h('h4', {}, T.repairPriority), h('div', { class: 'seg seg3', role: 'group', 'aria-label': T.repairPriority }, prioButtons)),
     h('section', { class: 'card' }, h('h3', {}, T.customersTitle), customers),
@@ -49,6 +52,15 @@ export function createSectorPanel({ onBuild }) {
     fill(head,
       h('h3', {}, sec.owned ? '' : '🔒 ', sec.name),
       h('p', { class: 'dim small' }, T.sectorTypes[sec.type], ' · ', sec.owned ? T.sectorOwned : T.sectorLocked));
+
+    const warns = sec.owned ? warningsFor(s, sec.id) : [];
+    const now = weekIndex(s.time.month, s.time.week);
+    fillKeyed(warnBox, `${sec.id}|${warns.map((w) => w.id).join(',')}|${sec.prep}|${canPrep(s, sec.id)}|${now}`, () => (warns.length ? h('div', { class: 'note warn' },
+      warns.map((w) => h('p', { class: 'small' }, '⚠ ', T.prepInSector(T.disasterNames[w.type], Math.max(1, weekIndex(w.month, w.week) - now)))),
+      sec.prep ? h('p', { class: 'good small' }, T.prepDone(sec.name))
+        : h('button', { class: 'btn btn-primary', disabled: !canPrep(s, sec.id),
+          onclick: () => dispatch({ type: 'disaster/prep', payload: { sector: sec.id } }) }, T.stormPrep(money(DISASTER.PREP_COST))),
+      h('p', { class: 'dim small' }, T.prepHelp(money(DISASTER.PREP_COST)))) : null));
 
     const oc = canOpenSector(s, sec.id);
     const cost = openCost(s);

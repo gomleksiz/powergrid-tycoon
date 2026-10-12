@@ -15,7 +15,7 @@ export const pendingHires = (state, role) =>
 
 function payStaffCost(state, amount) {
   state.company.cash -= amount;
-  state.company.staffCostsThisMonth += amount;
+  state.company.otherCostsThisMonth += amount;
 }
 
 // New staff start next week.
@@ -77,7 +77,7 @@ export function rush(state, projectId) {
   const p = state.projects.find((x) => x.id === projectId);
   if (!canRush(state, p)) return false;
   state.company.cash -= rushCost(state, p);
-  state.company.staffCostsThisMonth += rushCost(state, p);
+  state.company.otherCostsThisMonth += rushCost(state, p);
   if (p.kind === 'research') {
     const node = state.tech.nodes[p.node];
     node.rp += (p.total - node.rp) / 2;

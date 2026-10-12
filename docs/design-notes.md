@@ -95,3 +95,19 @@ All numbers are in `js/data/`.
 | Prosumers | Never more than the Low + Medium customers of the sector; when customers leave, prosumers go down too. | `sim/prosumers.js` |
 | Phase banner | Shown at the start of a new game (Phase 1) and when each phase starts. It does not pause the game. | `ui/phaseBanner.js` |
 | Debug | `debug/month` jumps to a month (with `?debug=1`). | `sim/actions.js` |
+
+## Step 9 – Disasters and events
+
+| Topic | Choice | Where |
+| --- | --- | --- |
+| When disasters are rolled | At each month tick for 2 months later (so a 2- or 4-week warning fits). So months 1–2 have no disasters. | `rollDisasters`, `DISASTER.SCHEDULE_AHEAD` |
+| Spread | Flood: + 1 neighbor. Earthquake: + all neighbors. Neighbors get half damage. | `data/disasters.js` |
+| Storm of the Decade | Month 110, week 1, 4 sectors picked like a windstorm (Hills × 2), damage 50–70. Warning 4 weeks before (always). | `SUPERSTORM` |
+| Warnings | Easy: 2 weeks always. Normal and Hard: 1 week if a hit sector of yours has Weatherproof Sensors, else none. | `warningWeeks` |
+| Storm Prep | $10,000 a sector after a warning. Damage × 0.8. When the storm hits, the crews repair that sector first, before the week's outage hours count. | `stormPrep`, `repairWeek` |
+| Heatwave | Lasts until the end of the month it starts in. Peak × 1.25 and supply 85% for that month's grid. | `sim/market.js` |
+| Event cards | Each month with no card waiting: 1 in 6 chance. 3 months of pause after a card. Conditions: `minMonth`, `csBelow`, `minStaff`. | `data/events.js` |
+| "Public petition" | The CS-below-30 card from section 11 (weight 6, so it comes often when CS is low). | `data/events.js` |
+| Event RP | "+ 300 RP" goes to the first research project; with no research, it waits for the next one. | `applyEffects` |
+| Card on load | A card that was waiting at save time opens again after the load. | `main.js` |
+| Debug | `debug/disaster` (strike next week) and `debug/event` with `?debug=1`. | `sim/actions.js` |
