@@ -41,6 +41,7 @@ export function createState(seed, difficulty = DEFAULT_DIFFICULTY, options = {})
     market: { walk: 1, eventMult: 1, supplyShare: 1, peakMult: 1 },
     meters: { ...METERS.START },
     govt: { auditCooldown: 0, finesDue: 0 },
+    flags: { phase: 1 },
     sectors,
     tech: createTech(),
     tutorial: { enabled: options.tutorial ?? false, step: 0 },

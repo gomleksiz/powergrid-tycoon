@@ -13,6 +13,7 @@ import { placeBuilding } from './build.js';
 import { startResearch, cancelResearch, clampTeams, scheduleResearch } from './research.js';
 import { startDeploy, cancelField, activateOneTime } from './deployment.js';
 import { hire, fire, setWage, rush } from './staffing.js';
+import { openSector } from './growth.js';
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const roundStep = (v, step) => Math.round(v / step) * step;
@@ -60,6 +61,11 @@ export const ACTIONS = {
 
   'build/place': (state, { type, x, y }) => placeBuilding(state, type, x, y),
 
+  'sector/open': (state, { sector }) => {
+    if (openSector(state, sector)) return [{ type: 'news', payload: { key: 'sectorOpened', sector: state.sectors[sector].name } }];
+    return [];
+  },
+
   'sector/priority': (state, { sector, priority }) => {
     const s = state.sectors[sector];
     if (s && REPAIR.PRIORITIES.includes(priority)) s.priority = priority;
@@ -105,4 +111,8 @@ export const ACTIONS = {
     refreshAvailable(state.tech.nodes);
   },
   'debug/cash': (state, amount) => { state.company.cash += amount; },
+  'debug/month': (state, month) => {
+    state.time.month = Math.max(1, Math.min(240, Math.round(month)));
+    state.time.week = 1;
+  },
 };

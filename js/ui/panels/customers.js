@@ -4,20 +4,23 @@ import { h, fill } from '../dom.js';
 import { T } from '../../data/text.js';
 import { TIER_IDS, TIERS } from '../../data/balance.js';
 import { SECTOR_TYPES } from '../../data/sectors.js';
-import { customersByTier, totalCustomers, ownedSectors } from '../../sim/economy.js';
+import { customersByTier, totalCustomers, ownedSectors, marketShare } from '../../sim/economy.js';
+import { prosumerShareAll } from '../../sim/prosumers.js';
 import { isTierUnlocked } from '../../sim/effects.js';
-import { num, numFull, money, mult, hours } from '../format.js';
+import { num, numFull, money, mult, hours, pct } from '../format.js';
 
 export function createCustomersPanel() {
   const total = h('p', { class: 'big-number' });
   const change = h('p', { class: 'dim small' });
   const potential = h('p', { class: 'dim small' });
+  const share = h('p', { class: 'small' });
+  const pros = h('p', { class: 'small' });
   const rows = h('tbody');
 
   const el = h('div', { class: 'panel-body' },
     h('section', { class: 'card' },
       h('h3', {}, T.customersTitle),
-      total, change, potential,
+      total, change, share, pros, potential,
       h('div', { class: 'table-wrap' },
         h('table', { class: 'data' },
           h('thead', {}, h('tr', {},
@@ -37,6 +40,10 @@ export function createCustomersPanel() {
       for (const t of TIER_IDS) if (isTierUnlocked(s, t)) pot += SECTOR_TYPES[sec.type].potential[t] ?? 0;
     }
     potential.textContent = T.potentialInfo(numFull(pot));
+    share.textContent = T.marketShareLine(pct(marketShare(s), 1));
+    const nPros = s.sectors.reduce((x, sec) => x + (sec.owned ? sec.prosumers : 0), 0);
+    pros.hidden = nPros === 0;
+    pros.textContent = T.prosumersLine(numFull(nPros), pct(prosumerShareAll(s)));
 
     const by = customersByTier(s);
     fill(rows, TIER_IDS.map((t) => {

@@ -15,6 +15,7 @@ import { createSectorPanel } from './ui/panels/sector.js';
 import { setUi } from './ui/uiState.js';
 import { bindDebugKeys } from './ui/debug.js';
 import { mountReport } from './ui/report.js';
+import { mountPhaseBanner } from './ui/phaseBanner.js';
 import { createBudgetPanel } from './ui/panels/budget.js';
 import { createCustomersPanel } from './ui/panels/customers.js';
 import { createResearchPanel } from './ui/panels/research.js';
@@ -84,6 +85,7 @@ const map = mountMapView($('map-area'), $('map'), {
   },
 });
 mountReport($('map-area'));
+const phaseBanner = mountPhaseBanner($('map-area'));
 
 mountTopbar($('topbar'), { loop, onMenu: openMenu, onTogglePanel: () => panel.toggle() });
 bindKeys({ loop, isPlaying: isActive, onMenu: openMenu });
@@ -103,6 +105,7 @@ on('game:start', () => {
   setUi({ selected: null, placing: null, ghost: null, view: 'normal' });
   map.start();
   panel.show('sector');
+  if (getState().time.month === 1 && getState().time.week === 1) phaseBanner.show(1);
 });
 
 // A project is done: a news line, and a pause if the player wants it.

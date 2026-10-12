@@ -83,3 +83,15 @@ All numbers are in `js/data/`.
 | ▲ / ▼ arrows | Only when the target is more than 0.5 away from the meter. | `SAT.ARROW_DEADBAND` |
 | Report reason | The part of the target (not the start value) that pushes the most in the direction of the change. | `topReason` |
 | Phone top bar | 2 rows: date, cash, pause and speed; then the 3 meters. | `css/components.css` |
+
+## Step 8 – Growth
+
+| Topic | Choice | Where |
+| --- | --- | --- |
+| New sector | The opening cost includes 1 substation. Health starts at 80. Customers start at 0 and come with the new-customer formula. | `sim/growth.js` `openSector` |
+| Opening cost | Counts as CapEx (GS > 75 gives − 15%; it counts for net worth). | `openCost` |
+| Corporate penalty | 3 × tariff × the Corporate price slider, for each contract that ends. Paid in the same month as "Penalties". | `corporateContracts` |
+| Withheld High payments | The full High bill of a sector with H > 4 h, × 50% with Smart Meters in that sector. | `withheldHigh` |
+| Prosumers | Never more than the Low + Medium customers of the sector; when customers leave, prosumers go down too. | `sim/prosumers.js` |
+| Phase banner | Shown at the start of a new game (Phase 1) and when each phase starts. It does not pause the game. | `ui/phaseBanner.js` |
+| Debug | `debug/month` jumps to a month (with `?debug=1`). | `sim/actions.js` |

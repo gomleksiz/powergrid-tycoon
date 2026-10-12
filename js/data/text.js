@@ -252,6 +252,27 @@ export const T = {
   },
   meterLine: (name, a, b, reason) => `${name}: ${a} → ${b}${reason ? ` (${reason})` : ''}`,
 
+  // Phases and growth
+  phases: {
+    1: { name: 'Village Reseller', line: 'You have 1 town. Learn the money flow, fix line breaks and set prices.' },
+    2: { name: 'Regional Grid', line: 'You can now open up to 5 more sectors. Medium and High customers can join. A rival is coming.' },
+    3: { name: 'Rival and Storm Wars', line: 'All 12 sectors are open. Corporate customers, a second rival and a big storm are coming.' },
+    4: { name: 'Endgame', line: 'Pick 1 victory path and put all your money into it.' },
+  },
+  phaseBanner: (id, name) => `Phase ${id}: ${name}`,
+  openSector: (cost) => `Open this sector for ${cost}`,
+  openReasons: {
+    phase: ({ month }) => `You can open new sectors from month ${month} (Phase 2).`,
+    limit: ({ max, month }) => `You can have ${max} sectors now.${month ? ` More from month ${month}.` : ''}`,
+    adjacent: () => 'A new sector must touch a sector that you have.',
+    cash: () => 'Not enough cash.',
+    owned: () => '',
+    unknown: () => '',
+  },
+  marketShareLine: (pct) => `Market share: ${pct} of all homes and firms in the 12 sectors.`,
+  prosumersLine: (n, pct) => `Prosumers (rooftop solar): ${n} homes (${pct} of Low and Medium).`,
+  tierLetters: { low: 'L', medium: 'M', high: 'H', corporate: 'C' },
+
   // Monthly report
   reportTitle: (label) => `Report: ${label}`,
   moneyIn: 'Money in',
@@ -342,6 +363,8 @@ export const T = {
     buildDone: ({ building, sector }) => `The new ${T.buildings[building] ?? building} in ${sector} is ready.`,
     buildFailed: ({ reason }) => T.buildReasons[reason] ?? T.buildReasons.blocked,
     lineFailure: ({ sector }) => `A worn line broke in ${sector}. Crews will repair it.`,
+    contractLost: ({ sector, count }) => `${count} Corporate contract${count === 1 ? '' : 's'} ended in ${sector} after outages. You paid a penalty.`,
+    sectorOpened: ({ sector }) => `You opened ${sector}. Customers will come with marketing.`,
     strike: () => 'Strike! Employees are unhappy. Repair and field work are 50% slower this month.',
     audit: ({ amount }) => `Government audit: a fine of ${amount}. Raise GS above 30 to stop audits.`,
     staffArrived: ({ role, count }) => `${count} new ${count === 1 ? T.roleOne[role] : T.roles[role].toLowerCase()} started work.`,

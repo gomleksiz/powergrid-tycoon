@@ -65,7 +65,8 @@ The online site is a new origin: saves from `localhost` do not move to it.
 - [x] Step 5 – Grid and outages
 - [x] Step 6 – Staff and tech
 - [x] Step 7 – Meters
-- [ ] Step 8 – Growth
+- [x] Step 8 – Growth
+- [ ] Step 9 – Disasters and events
 
 ## Credits
 

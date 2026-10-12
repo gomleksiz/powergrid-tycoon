@@ -294,3 +294,17 @@ dialog.tree-dlg::backdrop { background: var(--c-bg); }
   .meters { order: 10; width: 100%; justify-content: space-between; }
   .meter-chip { flex: 1; justify-content: center; min-height: 40px; }
 }
+
+/* ---------- Phase banner ---------- */
+.phase-banner {
+  position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
+  display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: center;
+  width: min(560px, calc(100% - 24px));
+  padding: 12px 14px;
+  border: 2px solid var(--c-accent); border-radius: 8px;
+  background: rgb(20 27 51 / 0.97); box-shadow: var(--shadow);
+  z-index: 8;
+}
+.phase-banner strong { color: var(--c-accent); font-size: var(--fs-big); }
+.phase-banner span { grid-column: 1; font-size: var(--fs-small); }
+.phase-banner .btn { grid-column: 2; grid-row: 1 / span 2; }

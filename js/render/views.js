@@ -4,6 +4,7 @@ import { MAP, SECTOR_TYPES } from '../data/sectors.js';
 import { sectorBounds } from '../sim/mapgen.js';
 import { drawSprite } from './sprites.js';
 import { sectorStatus } from '../sim/grid.js';
+import { TIER_IDS } from '../data/balance.js';
 
 const T = MAP.TILE;
 
@@ -79,8 +80,42 @@ const overlays = {
   },
 };
 
+// Tier colors; each segment also has a letter (L, M, H, C), so color is not needed.
+const TIER_COLOR = { low: '#6cb8ff', medium: '#3ad1a0', high: '#ffd23f', corporate: '#c9b8ff' };
+const TIER_LETTER = { low: 'L', medium: 'M', high: 'H', corporate: 'C' };
+
+function tierBars(ctx, state) {
+  ctx.font = "700 13px 'Atkinson Hyperlegible', system-ui, sans-serif";
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'center';
+  for (const s of state.sectors) {
+    if (!s.owned) continue;
+    const b = sectorBounds(s.id);
+    const total = TIER_IDS.reduce((n, t) => n + s.customers[t], 0);
+    const x0 = (b.x + 1) * T;
+    const w = (b.w - 2) * T;
+    const y = (b.y + b.h / 2 - 0.5) * T;
+    ctx.fillStyle = 'rgba(11, 16, 32, 0.9)';
+    ctx.fillRect(x0 - 3, y - 3, w + 6, T + 26);
+    let x = x0;
+    for (const t of TIER_IDS) {
+      if (!s.customers[t] || !total) continue;
+      const sw = Math.max(16, (w * s.customers[t]) / total);
+      ctx.fillStyle = TIER_COLOR[t];
+      ctx.fillRect(x, y, Math.min(sw, x0 + w - x), T);
+      ctx.fillStyle = '#0b1020';
+      ctx.fillText(TIER_LETTER[t], x + Math.min(sw, x0 + w - x) / 2, y + T / 2);
+      x += sw;
+    }
+    ctx.fillStyle = '#eef1fb';
+    ctx.fillText(TIER_IDS.filter((t) => s.customers[t]).map((t) => `${TIER_LETTER[t]} ${s.customers[t]}`).join('  ') || '0', x0 + w / 2, y + T + 11);
+  }
+  ctx.textAlign = 'start';
+}
+
 const icons = {
   normal(ctx, state) { statusIcons(ctx, state, false); },
+  tiers(ctx, state) { tierBars(ctx, state); },
   outage(ctx, state) { statusIcons(ctx, state, true); },
   hazards(ctx, state) {
     for (const s of state.sectors) {

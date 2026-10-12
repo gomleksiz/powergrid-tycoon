@@ -15,10 +15,12 @@ import { money, numFull, hours } from '../format.js';
 import { dispatch } from '../../core/store.js';
 import { sectorStatus, capacityMw, peakMw } from '../../sim/grid.js';
 import { REPAIR, TIERS as TIER_DATA } from '../../data/balance.js';
+import { canOpenSector, openCost } from '../../sim/growth.js';
 
 export function createSectorPanel({ onBuild }) {
   const head = h('div', { class: 'sector-head' });
   const info = h('div');
+  const openBox = h('div');
   const customers = h('div');
   const buildings = h('div');
   const grid = h('div');
@@ -29,7 +31,7 @@ export function createSectorPanel({ onBuild }) {
   const build = h('div', { class: 'build-list' });
 
   const el = h('div', { class: 'panel-body' },
-    h('section', { class: 'card' }, head, info),
+    h('section', { class: 'card' }, head, info, openBox),
     h('section', { class: 'card grid-card' }, h('h3', {}, T.gridTitle), grid,
       h('h4', {}, T.repairPriority), h('div', { class: 'seg seg3', role: 'group', 'aria-label': T.repairPriority }, prioButtons)),
     h('section', { class: 'card' }, h('h3', {}, T.customersTitle), customers),
@@ -47,6 +49,16 @@ export function createSectorPanel({ onBuild }) {
     fill(head,
       h('h3', {}, sec.owned ? '' : '🔒 ', sec.name),
       h('p', { class: 'dim small' }, T.sectorTypes[sec.type], ' · ', sec.owned ? T.sectorOwned : T.sectorLocked));
+
+    const oc = canOpenSector(s, sec.id);
+    const cost = openCost(s);
+    fillKeyed(openBox, `${sec.id}|${sec.owned}|${oc.ok}|${oc.reason}|${cost}`, () => (sec.owned ? null : [
+      h('button', {
+        class: 'btn btn-primary wide', disabled: !oc.ok,
+        onclick: () => dispatch({ type: 'sector/open', payload: { sector: sec.id } }),
+      }, T.openSector(cost === null ? '–' : money(cost))),
+      oc.ok ? null : h('p', { class: 'small warn' }, T.openReasons[oc.reason](oc)),
+    ]));
 
     const hz = Object.entries(type.hazard);
     fill(info,

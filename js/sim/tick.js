@@ -12,6 +12,8 @@ import { deployWeek } from './deployment.js';
 import { staffArrive, monthStaff } from './staffing.js';
 import { updateMeters } from './satisfaction.js';
 import { marketShare } from './economy.js';
+import { withheldHigh, corporateContracts, checkPhase } from './growth.js';
+import { updateProsumers } from './prosumers.js';
 
 export function weekTick(state, rng) {
   const events = [{ type: 'week:end', payload: { ...state.time } }];
@@ -38,10 +40,19 @@ export function monthTick(state, rng) {
   // 4. Calculate the grid: outage hours of this month (used by money and customers)
   const grid = calculateGrid(state);
 
+  // Corporate contracts can end after outages; the company pays a penalty.
+  const corp = corporateContracts(state, rng);
+  for (const c of corp.sectors) events.push({ type: 'news', payload: { key: 'contractLost', sector: c.name, count: c.lost, kind: 'error' } });
+
   // 1. Collect money (fines from last month's audit are paid now)
   const own = ownEnergy(state);
-  const penalties = state.govt.finesDue ?? 0;
-  const money = monthlyMoney(state, { capexCredit: state.company.capexThisMonth * fx.capexTaxCredit, ownKwh: own.kwh, penalties });
+  const penalties = (state.govt.finesDue ?? 0) + corp.penalty;
+  const money = monthlyMoney(state, {
+    capexCredit: state.company.capexThisMonth * fx.capexTaxCredit,
+    ownKwh: own.kwh,
+    penalties,
+    withheld: withheldHigh(state),
+  });
   state.govt.finesDue = 0;
   state.company.cash += money.net;
   state.company.lastRevenue = money.revenue;
@@ -49,6 +60,8 @@ export function monthTick(state, rng) {
 
   // Customers come and go
   const customers = updateCustomers(state, rng, { fx, budget, cs: state.meters.cs });
+  customers.lost += corp.lost;
+  customers.prosumersJoined = updateProsumers(state, rng, budget.marketing, fx);
 
   // Lines get older; Maintenance makes them better. Weak lines can break.
   updateHealth(state, budget.maintenance);
@@ -89,6 +102,7 @@ export function monthTick(state, rng) {
   state.company.staffCostsThisMonth = 0;
   state.time.month += 1;
   events.push({ type: 'month:end', payload: { month, report: state.report } });
+  events.push(...checkPhase(state));
   return events;
 }
 
