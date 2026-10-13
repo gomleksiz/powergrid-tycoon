@@ -4,6 +4,7 @@ import { NODES } from './techTree.js';
 
 const n = (v) => Math.round(v).toLocaleString('en-US');
 const plural = (k, one, many = `${one}s`) => `${k} ${k === 1 ? one : many}`;
+const usd = (v) => `$${n(v)}`;
 
 export const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -51,6 +52,17 @@ export const T = {
     pr: 'Raises Customer Satisfaction.',
   },
   perMonth: (v) => `${v} a month`,
+  // version 1.2: what each budget part does now
+  budgetFx: {
+    marketing: (f, n, extra) => `Now: new customers × ${f} → about ${n} a month (${extra} of them from this budget).`,
+    rd: (f, rp, extra, teams) => (teams ? `Now: research × ${f} → ${rp} RP a month (${extra} from this budget).` : `Now: research × ${f}. No research team works now.`),
+    maintenance: (avg, worst, hold) => `Now: line health ${avg >= 0 ? '+' : ''}${avg.toFixed(1)} a month on average${worst ? `; weakest: ${worst.name} ${worst.net >= 0 ? '+' : ''}${worst.net.toFixed(1)} (health ${Math.round(worst.health)})` : ''}. To hold every sector: ${hold} a month.`,
+    lobbying: (gs) => `Now: GS target + ${gs} (at most + 20).`,
+    pr: (cs) => `Now: CS target + ${cs} (at most + 10).`,
+  },
+  budgetTop: (v) => `More than ${v} a month does nothing.`,
+  budgetOver: (v) => `⚠ ${v} a month is above the top and does nothing. Move it to another part or lower the total.`,
+  budgetWasted: (v) => `⚠ ${v} a month of your budget does nothing now. Lower the total budget or move it.`,
   pricesTitle: 'Prices',
   pricesHelp: 'A low price brings customers. A high price brings money, but customers leave.',
   tierNames: { low: 'Low', medium: 'Medium', high: 'High', corporate: 'Corporate' },
@@ -59,7 +71,7 @@ export const T = {
   priceBill: (bill) => `${bill} a month for each customer`,
   priceCapped: 'GS is below 30: the price can be 1.1× at most.',
   loansTitle: 'Loans',
-  loanInfo: (debt, limit) => `Debt ${debt} of ${limit}.`,
+  loanInfo: (debt, limit) => `Debt ${debt} of ${limit}. The bank lends up to 2 months of revenue.`,
   loanInterest: (v) => `Interest: ${v} a month (1%).`,
   takeLoan: (v) => `Borrow ${v}`,
   repayLoan: (v) => `Pay back ${v}`,
@@ -87,10 +99,6 @@ export const T = {
   zoomIn: 'Zoom in',
   zoomOut: 'Zoom out',
   zoomHome: 'Show my sectors',
-  placeConfirm: 'Build here',
-  placeCancel: 'Stop building',
-  placePick: (name, cost) => `Tap a tile for the ${name} (${cost}).`,
-  placeHere: (name, cost) => `Build the ${name} here for ${cost}?`,
 
   // Sectors
   sectorTypes: {
@@ -126,6 +134,7 @@ export const T = {
     permit: 'No permit: GS must be 40 or more.',
     notOwned: 'You can only build in your own sectors.',
     blocked: 'This place is not free. Pick grass, sand or a field.',
+    full: 'No free space for it in this sector.',
     locked: 'Locked.',
     unknown: 'Unknown building.',
   },
@@ -259,9 +268,9 @@ export const T = {
 
   // Phases and growth
   phases: {
-    1: { name: 'Village Reseller', line: 'You have 1 town. Learn the money flow, fix line breaks and set prices.' },
-    2: { name: 'Regional Grid', line: 'You can now open up to 5 more sectors. Medium and High customers can join. A rival is coming.' },
-    3: { name: 'Rival and Storm Wars', line: 'All 12 sectors are open. Corporate customers, a second rival and a big storm are coming.' },
+    1: { name: 'Village Reseller', line: 'You have 1 town. Learn the money flow, fix line breaks, set prices and build substations. Watch for rivals.' },
+    2: { name: 'Regional Grid', line: 'You can now open up to 5 more sectors. Medium and High customers can join. More rivals are coming.' },
+    3: { name: 'Rival and Storm Wars', line: 'All 12 sectors are open. Corporate customers, more rivals and a big storm are coming.' },
     4: { name: 'Endgame', line: 'Pick 1 victory path and put all your money into it.' },
   },
   phaseBanner: (id, name) => `Phase ${id}: ${name}`,
@@ -284,23 +293,11 @@ export const T = {
     heatwave: 'Heatwave', superstorm: 'Storm of the Decade',
   },
   disasterIcons: { windstorm: '🌪', ice: '🧊', flood: '🌊', earthquake: '⚡', heatwave: '🔥', superstorm: '🌀' },
-  warningTitle: (name, weeks) => `Warning: ${name} in ${weeks} week${weeks === 1 ? '' : 's'}`,
-  warningHits: (list) => `It will hit: ${list}.`,
-  warningNotYours: 'It will not hit your sectors.',
   prepHelp: (cost) => `Storm Prep costs ${cost} for each sector: damage − 20%, and crews start the repair at once.`,
-  prepButton: (name, cost) => `Storm Prep in ${name} (${cost})`,
   prepDone: (name) => `${name}: ready ✓`,
   prepInSector: (name, weeks) => `${name} in ${weeks} week${weeks === 1 ? '' : 's'}.`,
   stormPrep: (cost) => `Storm Prep (${cost})`,
-  reportTitleDisaster: (name) => `Disaster report: ${name}`,
-  disasterLine: (name, dmg) => `${name}: ${dmg} damage.`,
-  savedLine: (techs, n) => `${techs} saved ${n} damage points.`,
-  prepSaved: 'Storm Prep helped.',
   noOwnedHit: 'It did not hit your sectors. No damage.',
-  repairTime: (w) => `Repair time with your crews: about ${w} week${w === 1 ? '' : 's'}.`,
-  repairNone: 'No free technicians! Hire technicians or turn on "Repair first".',
-  heatText: 'Peak load + 25% this month. The wholesaler gives only 85% of the power. Batteries, the VPP and your own plants help.',
-  quakeFission: 'Fission plants in hit sectors stop for 2 months.',
 
   // Event cards
   eventTitle: 'Event',
@@ -319,11 +316,27 @@ export const T = {
       choices: ['Pay extra for full supply (wholesale × 1.3)', 'Take 85% of the power (outages, unless you have plants or batteries)'] },
     publicPetition: { title: 'Public petition', text: 'Many customers sign a petition against your service.',
       choices: ['Cut prices 10% for 3 months (CS + 5)', 'Ignore it (CS − 3, GS − 3)'] },
+    unionStrike: { title: 'The union calls a strike', text: 'The union wants 10% more pay. If you say no, your staff stop work for 2 months: repairs and field work are 50% slower.',
+      choices: ['Pay 10% more (ES + 5)', 'Say no: a 2-month strike (ES − 10)'] },
+    substationFire: { title: 'Substation fire', text: 'A fire broke out in one of your substations.',
+      choices: ['Rush repair now ($30,000)', 'Leave it broken for now (repair it later in the Sector tab)'] },
+    heatDome: { title: 'Heat dome', text: 'A long heat wave: everyone runs air conditioning in the evening.',
+      choices: ['Ask customers to save power (peak + 15% for 2 months, CS − 3)', 'Do nothing (peak + 30% for 2 months)'] },
+    cyberAttack: { title: 'Cyber attack', text: 'Hackers broke into your grid control system.',
+      choices: ['Pay security experts ($60,000, GS + 2)', 'Fix it by hand (35 damage in 1 sector)'] },
+    poachEngineers: { title: 'A rival wants your engineers', text: 'A rival offers your engineers more money.',
+      choices: ['Match the offer (wages + 5%)', 'Let 3 engineers go (ES − 5)'] },
   },
 
   // Rivals
-  rivalNames: { apex: 'Apex Energy', volt: 'Volt Dynamics' },
-  rivalStyle: { apex: 'Fast and cheap: price 0.8×, many outages (12–24 h).', volt: 'Slow and reliable: price 1.1×, few outages (1–3 h).' },
+  rivalNames: { apex: 'Apex Energy', volt: 'Volt Dynamics', nova: 'Nova Power' },
+  rivalStyle: {
+    apex: 'Fast and cheap: price 0.8×, many outages (12–24 h).',
+    volt: 'Slow and reliable: price 1.1×, few outages (1–3 h).',
+    nova: 'In the middle: price 0.95×, some outages (4–8 h).',
+  },
+  rivalLetters: { apex: 'A', volt: 'V', nova: 'N' },
+  rivalDriveLine: (m) => `Sales drive: 15% cheaper for ${m} more month${m === 1 ? '' : 's'}.`,
   rivalsTitle: 'Rivals',
   rivalsNone: 'No rival is in any sector yet.',
   rivalsComing: (name, month) => `${name} can come from ${month}.`,
@@ -332,9 +345,9 @@ export const T = {
   rivalCustomers: (n, pct) => `${n} customers (${pct} of the sector)`,
   rivalUnowned: 'You do not have this sector.',
   buyout: (c) => `Buy them out for ${c}`,
-  buyoutHelp: 'You get their customers and they leave. A high GS makes it cheaper.',
+  buyoutHelp: 'You get their customers and they leave. No rival can enter that sector for 2 years. A high GS makes it cheaper.',
   priceCutTitle: 'Local price cut',
-  priceCutHelp: 'Each 10% cut takes 4 strength from a rival each month. 30% is "unfair": GS − 2 each month.',
+  priceCutHelp: 'Each 10% cut takes 3 strength from a rival each month. 30% is "unfair": GS − 2 each month.',
   priceCut: (pct) => (pct === 0 ? 'None' : `− ${pct}%`),
   chartersTitle: 'Charters',
   franchiseHelp: (n) => `Franchise Charter: rivals cannot enter up to ${n} chosen sectors while GS is 60 or more.`,
@@ -345,7 +358,7 @@ export const T = {
   monopolyButton: 'Use the Monopoly Charter',
   monopolyOff: 'Research Utility Monopoly Charter (Regulatory) first.',
   monopolyDone: 'The Monopoly Charter is active. No rival can come back.',
-  beBetter: 'Be better: when your outage hours are lower than the rival\'s, its strength stops growing.',
+  beBetter: 'Be better: when your outage hours are lower than the rival\'s, its strength grows at half speed. Rivals like your sectors: they come where your customers are.',
   sectorRival: (name, s) => `Rival: ${name} (strength ${s})`,
 
   // Goals, Advisor, end
@@ -425,8 +438,8 @@ export const T = {
   // Keys and help
   keysTitle: 'Keys',
   keyList: [
-    ['Space', 'Pause or play'], ['1, 2, 3', 'Speed 1x, 2x, 5x'], ['Esc', 'Menu (or stop building)'],
-    ['+ / −', 'Zoom in or out'], ['Arrow keys', 'Move the map'], ['V', 'Next map view'],
+    ['Space', 'Pause or play'], ['1, 2, 3', 'Speed 1x, 2x, 5x'], ['Esc', 'Menu'], ['D', 'Live board or map'],
+    ['+ / −', 'Zoom in or out (map)'], ['Arrow keys', 'Move the map'], ['V', 'Next map view'],
     ['E', 'Sector tab'], ['B', 'Budget tab'], ['R', 'Research tab'], ['P', 'Projects tab'], ['S', 'Staff tab'],
     ['C', 'Customers tab'], ['X', 'Rivals tab'], ['G', 'Goals tab'], ['T', 'Tech tree'], ['N', 'News log'],
     ['M', 'Mute or unmute'], ['?', 'This list'],
@@ -442,6 +455,69 @@ export const T = {
     ['Pixel art', 'Drawn in code for this game by tools/make-sprites.js.'],
     ['Music and sound effects', 'Made in code with the Web Audio API (js/audio/audio.js). No sound files.'],
   ],
+
+  // ---------- version 1.2: the live board ----------
+  boardTitle: 'Live board',
+  modeLabel: 'Map or live board',
+  modeNames: { map: 'Map', board: 'Board' },
+  modeIcons: { map: '🗺', board: '📊' },
+  modeHelp: { map: 'Show the map (D)', board: 'Show the live board (D)' },
+  boardCash: 'Cash',
+  boardLastMonth: (v) => `${v} last month`,
+  boardRevenue: 'Revenue',
+  boardCostsLine: (v) => `Costs ${v}`,
+  boardCustomersNow: 'Customers',
+  boardChange: (v) => `${v} last month`,
+  boardShare: 'Market share',
+  boardRivalShare: (n) => `Rivals: ${n} customers`,
+  boardOutage: 'Outages',
+  boardOutageSub: 'Average last month',
+  boardPower: 'Evening peak',
+  boardPowerSub: (own, cap) => `Own ${own} MW · grid ${cap} MW`,
+  boardWholesale: 'Wholesale price',
+  boardShortage: (p) => `⚠ Shortage ${p}%`,
+  boardNoShortage: 'No shortage',
+  boardDebt: 'Debt',
+  boardLoanLimit: (v) => `Bank limit ${v}`,
+  boardPowerPeak: 'Power at the evening peak (MW)',
+  boardPeakDemand: 'Demand',
+  boardCapacity: 'Substation capacity',
+  boardOwnPeak: 'Own power',
+  boardEnergy: 'Energy each month (GWh)',
+  boardUse: 'Customers use',
+  boardProduce: 'Your plants make',
+  boardMoney: 'Money each month',
+  boardCosts: 'Costs',
+  boardCustomers: 'Customers',
+  boardYou: 'You',
+  boardRivalCustomers: 'Rivals',
+  boardCities: 'Cities',
+  boardOpenCity: (name) => `${name}: open in the Sector tab`,
+  boardCityCustomers: (n, all, p) => `${n} of ${all} homes and firms (${p})`,
+  boardCityPower: (peak, cap) => `Peak ${peak} MW of ${cap} MW`,
+  boardCityLocked: (all) => `Not yours · ${all} possible customers`,
+  boardCityChart: (name) => `Customers in ${name}: you and the rival`,
+  boardWaiting: (n) => `${n} waiting`,
+  boardBroken: (n) => `✕ ${n} broken`,
+  boardLocalCrew: (n, now) => `👷 ${n} stationed${now < n ? ` (${now} free)` : ''}`,
+  boardContractors: (w) => `🚧 crew ${w} wk`,
+  boardPrepped: '✓ Storm Prep',
+  boardRivalLine: (name, price, strength, n) => `${name}: ${price}× · strength ${strength} · ${n} customers`,
+  boardDrive: 'sales drive',
+  boardWar: 'price war',
+  boardRival: 'Rival',
+  boardCity: 'City',
+  boardPrice: 'Price',
+  boardYours: 'you',
+  boardDisasters: 'Disasters',
+  boardComing: 'Warnings',
+  boardWarning: (name, weeks, list) => `${name} in ${weeks} week${weeks === 1 ? '' : 's'}: ${list}`,
+  boardNotYours: 'not your sectors',
+  boardNoWarning: 'No warning now. Weatherproof Sensors give a warning 1 week before.',
+  boardRecent: 'Last disasters',
+  boardHitLine: (name, dmg, broken, prep) => `${name} ${dmg} damage${broken ? `, broken: ${broken}` : ''}${prep ? ' (prepped)' : ''}`,
+  boardHeat: 'peak + 25% for the month',
+  boardNoDisasters: 'No disaster yet.',
 
   // ---------- version 1.1 ----------
 
@@ -499,8 +575,27 @@ export const T = {
     ownPower: (d) => (d.type ? `Power shortage in the region. Build own power: ${T.buildings[d.type]}.`
       : 'Power shortage in the region. Research Batteries or Wind Farms for own power at the peak.'),
     strike: () => 'Strike: repairs are 50% slower. Raise wages.',
+    // version 1.2
+    contractors: (d) => `Call an emergency crew: ${d.techs} contractors for ${plural(d.weeks, 'week')}, ${usd(d.cost)}. They start at once and do not strike.`,
+    repairBuilding: (d) => `${T.buildings[d.type]} is broken. Repair it for ${usd(d.cost)}.`,
+    connectFull: (d) => `${n(d.waiting)} new customers wait for a connection. Build or upgrade a substation.`,
   },
-  potentialGrows: 'From 2038 the region grows each year: more homes and firms want power.',
+  potentialGrows: 'From 2038 the region grows each year: more homes and firms want power. New customers connect only while your substations have room.',
+  // version 1.2: emergency crews, broken buildings, connections
+  contractorsLine: (techs, weeks) => `🚧 ${techs} contractors repairing here for ${plural(weeks, 'more week')}.`,
+  waitingSector: (count) => `⚠ ${n(count)} new customers wanted to join last month, but the substations are full.`,
+  brokenTag: 'Broken',
+  // version 1.2: technicians stationed in a sector
+  localCrewTitle: 'Local crew',
+  localCrewHelp: 'Technicians stationed here repair this sector first, before the outage hours count, and broken buildings here are repaired in 1 week. They come from your free technicians.',
+  localCrewLine: (n, working, all) => `${plural(n, 'technician')} stationed here${n > working ? ` (${working} free now)` : ''}. ${all} stationed in all sectors.`,
+  crewFewer: 'Station 1 technician less',
+  crewMore: 'Station 1 more technician',
+  buildHere: (name) => `Build in ${name}`,
+  autoPrep: 'Storm Prep by itself after a warning',
+  autoPrepHelp: (cost) => `Pays ${cost} for each of your sectors in the warning: damage − 20%, and crews start the repair at once.`,
+  repairingTag: (w) => `Repair: ${plural(w, 'week')}`,
+  repairBuilding: (cost) => `Repair ${cost}`,
 
   // Sector tab: buildings and upgrades
   buildingLevel: (name, level) => `${name} · level ${level}`,
@@ -553,6 +648,7 @@ export const T = {
   energy: 'Energy',
   wages: 'Wages',
   upkeep: 'Upkeep',
+  service: 'Customer service',
   budget: 'Budget',
   interest: 'Loan interest',
   penalties: 'Penalties and fines',
@@ -562,7 +658,8 @@ export const T = {
   wholesaleLine: (p) => `Wholesale price: ${p} per kWh`,
   closeReport: 'Close report',
   reportLog: (date, net, cust) => `${date}: net ${net}, customers ${cust}.`,
-  otherCostsLine: (v) => `Also paid (hiring, rush, storm prep, events): ${v}`,
+  otherCostsLine: (v) => `Also paid (hiring, rush, storm prep, repairs, events): ${v}`,
+  waitingLine: (n) => `${n} new customers could not connect: the substations are full.`,
   capexLine: (v) => `Investments this month: ${v}`,
 
   // Difficulty
@@ -656,8 +753,11 @@ export const T = {
     buildDone: ({ building, sector }) => `The new ${T.buildings[building] ?? building} in ${sector} is ready.`,
     buildFailed: ({ reason }) => T.buildReasons[reason] ?? T.buildReasons.blocked,
     lineFailure: ({ sector }) => `A worn line broke in ${sector}. Crews will repair it.`,
-    warning: ({ name, weeks }) => `Warning: ${name} in ${weeks} week${weeks === 1 ? '' : 's'}.`,
-    disaster: ({ name }) => `${name}! See the disaster report.`,
+    // version 1.2: no dialogs for disasters
+    warningLine: ({ name, weeks, mine, prepped }) => `⚠ ${name} in ${weeks} week${weeks === 1 ? '' : 's'}: ${mine.length ? mine.join(', ') : 'not your sectors'}.${prepped.length ? ` Storm Prep paid for ${prepped.join(', ')}.` : ''}`,
+    disasterLine: ({ name, report }) => `${name}! ${report.sectors.length
+      ? report.sectors.map((l) => `${l.name}: ${Math.round(l.actual)} damage${l.broken?.length ? `, broken: ${l.broken.map((b) => T.buildings[b]).join(', ')}` : ''}`).join('; ')
+      : (report.type === 'heatwave' ? 'Peak + 25% this month.' : 'No damage to your sectors.')}${report.repairWeeks ? ` Repair: about ${report.repairWeeks} weeks.` : ''}`,
     rivalEnter: ({ rival, name }) => `${T.rivalNames[rival]} entered ${name}! See the Rivals tab.`,
     rivalLeave: ({ rival, name }) => `${T.rivalNames[rival]} left ${name}.`,
     monopoly: () => 'Monopoly Charter: all rivals must leave. GS − 10 (people do not like monopolies).',
@@ -683,5 +783,9 @@ export const T = {
     pmIdle: ({ role, count, weeks }) => `Project Manager: ${count} ${T.roles[role].toLowerCase()} have had no work for ${weeks} weeks. ${T.idleHint[role]}`,
     pmStuck: ({ project, reason, weeks }) => `Project Manager: ${T.projectLabel(project)} has waited ${weeks} weeks: ${T.waitReasons[reason]}.`,
     upgraded: ({ building, sector, level }) => `${T.buildings[building]} in ${sector} is now level ${level}.`,
+    // version 1.2
+    rivalDrive: ({ rival, name }) => `${T.rivalNames[rival]} starts a sales drive in ${name}: 15% cheaper for 6 months. Watch your customers.`,
+    contractors: ({ sector }) => `An emergency crew is at work in ${sector}.`,
+    buildingFixed: ({ building, sector }) => `The ${T.buildings[building] ?? building} in ${sector} is repaired.`,
   },
 };

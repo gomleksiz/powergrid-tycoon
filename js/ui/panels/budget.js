@@ -4,15 +4,16 @@ import { h } from '../dom.js';
 import { createSlider } from '../slider.js';
 import { confirmDialog } from '../dialog.js';
 import { T } from '../../data/text.js';
-import { BUDGET, PRICE, TIER_IDS, TIERS, MONEY, REGION } from '../../data/balance.js';
+import { BUDGET, PRICE, TIER_IDS, TIERS, REGION } from '../../data/balance.js';
 import { NODES } from '../../data/techTree.js';
 import { diff } from '../../data/difficulty.js';
 import { dispatch, getState } from '../../core/store.js';
-import { budgetDollars, budgetBase, canTakeLoan, canRepay, loanLimit, interest, wholesalePrice, govPrice, demandKwh } from '../../sim/economy.js';
+import { budgetDollars, budgetBase, canTakeLoan, canRepay, loanLimit, loanStep, repayStep, interest, wholesalePrice, govPrice, demandKwh } from '../../sim/economy.js';
+import { budgetEffects } from '../../sim/budgetEffects.js';
 import { ownEnergy, ownPeakMw } from '../../sim/grid.js';
 import { isTierUnlocked } from '../../sim/effects.js';
 import { maxPrice } from '../../sim/actions.js';
-import { money, moneyFull, mult, energy } from '../format.js';
+import { money, moneyFull, mult, energy, num } from '../format.js';
 
 const RISKY_PRICE = 1.2;
 
@@ -56,8 +57,9 @@ export function createBudgetPanel() {
 
   const loanText = h('p', { class: 'small' });
   const interestText = h('p', { class: 'dim small' });
-  const take = h('button', { class: 'btn', onclick: () => dispatch({ type: 'loan/take' }) }, T.takeLoan(money(MONEY.LOAN_STEP)));
-  const repay = h('button', { class: 'btn', onclick: () => dispatch({ type: 'loan/repay' }) }, T.repayLoan(money(MONEY.LOAN_STEP)));
+  const take = h('button', { class: 'btn', onclick: () => dispatch({ type: 'loan/take' }) });
+  const repay = h('button', { class: 'btn', onclick: () => dispatch({ type: 'loan/repay' }) });
+  const wasted = h('p', { class: 'small warn', hidden: true });
 
   const el = h('div', { class: 'panel-body' },
     h('section', { class: 'card' },
@@ -66,6 +68,7 @@ export function createBudgetPanel() {
       h('h4', {}, T.budgetSplit),
       h('p', { class: 'dim small' }, T.budgetSplitHelp),
       BUDGET.KEYS.map((k) => parts[k].el),
+      wasted,
     ),
     h('section', { class: 'card' },
       h('h3', {}, T.pricesTitle),
@@ -87,6 +90,14 @@ export function createBudgetPanel() {
     ),
   );
 
+  function effectText(k, e) {
+    if (k === 'marketing') return T.budgetFx.marketing(e.factor.toFixed(2), num(e.newPerMonth), num(e.fromBudget));
+    if (k === 'rd') return T.budgetFx.rd(e.factor.toFixed(2), num(e.rpPerMonth), num(e.fromBudget), e.teams);
+    if (k === 'maintenance') return T.budgetFx.maintenance(e.avgNet, e.worst, money(e.holdDollars));
+    if (k === 'lobbying') return T.budgetFx.lobbying(e.gs.toFixed(1));
+    return T.budgetFx.pr(e.cs.toFixed(1));
+  }
+
   async function setPrice(tier, v) {
     const s = getState();
     if (diff(s).confirmRisky && v > RISKY_PRICE && s.prices[tier] <= RISKY_PRICE) {
@@ -102,14 +113,21 @@ export function createBudgetPanel() {
       extraText: money(d.total),
       noteText: T.budgetTotalHelp(s.budget.totalPct, money(budgetBase(s))),
     });
+    // Version 1.2: the effect of each part now, and money above the top.
+    const fx = budgetEffects(s);
     for (const k of BUDGET.KEYS) {
+      const e = fx[k];
       parts[k].set(s.budget.split[k], {
         text: `${s.budget.split[k]}%`,
         extraText: T.perMonth(money(d[k])),
         locked: s.budget.locks[k],
         noteText: T.budgetKeyHelp[k],
+        effectText: effectText(k, e) + (e.over > 0 ? ` ${T.budgetOver(money(e.over))}` : Number.isFinite(e.top) ? ` ${T.budgetTop(money(e.top))}` : ''),
+        effectClass: e.over > 0 ? 'warn' : 'good',
       });
     }
+    wasted.hidden = !(fx.wasted > 0);
+    wasted.textContent = T.budgetWasted(money(fx.wasted));
     const cap = maxPrice(s);
     for (const t of TIER_IDS) {
       const open = isTierUnlocked(s, t);
@@ -134,6 +152,8 @@ export function createBudgetPanel() {
 
     loanText.textContent = T.loanInfo(moneyFull(s.company.debt), moneyFull(loanLimit(s)));
     interestText.textContent = T.loanInterest(moneyFull(interest(s)));
+    take.textContent = T.takeLoan(money(loanStep(s)));
+    repay.textContent = T.repayLoan(money(repayStep(s) || loanStep(s)));
     take.disabled = !canTakeLoan(s);
     repay.disabled = !canRepay(s);
   }

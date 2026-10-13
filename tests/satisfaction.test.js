@@ -63,7 +63,7 @@ test('GS target: 50 + 25c − 20k + U + L − A + B', () => {
   const t = gsTarget(s);
   near(part(t, 'coal'), -12);
   near(part(t, 'uptime'), 10);
-  near(part(t, 'lobbying'), (5_000 / 5_000) * 1.15);
+  near(part(t, 'lobbying'), (6_250 / 5_000) * 1.15);   // 25 % of 20 % of $125,000
   home(s).lastH = 20;
   near(part(gsTarget(s), 'uptime'), -20);
   s.tech.nodes.R2.status = 'ACTIVE';
@@ -115,9 +115,11 @@ test('GS < 30: price max 1.1×, audit fine, no fission permit', () => {
   const s = getState();
   s.prices.low = 1.4;
   s.meters.gs = 10;
+  s.company.lastRevenue = 200_000;
   const res = updateMeters(s, createRng(1));
   assert.ok(s.prices.low <= 1.1);
-  assert.ok(res.fine >= 50_000 && res.fine <= 250_000);
+  // Version 1.2: 25–75 % of last month's revenue, in $10,000 steps
+  assert.ok(res.fine >= 50_000 && res.fine <= 150_000, `fine ${res.fine}`);
   assert.equal(s.govt.auditCooldown, 6);
   dispatch({ type: 'price/set', payload: { tier: 'low', value: 1.5 } });
   assert.equal(s.prices.low, 1.1);

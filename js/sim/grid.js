@@ -8,7 +8,8 @@ import { OUTAGE_REDUCE_MIN_R } from '../data/techTree.js';
 import { sectorEffects } from './effects.js';
 import { loadGrowth } from './market.js';
 
-const active = (b) => b.status === 'active';
+// A broken building (version 1.2) gives nothing until it is repaired.
+const active = (b) => b.status === 'active' && !b.broken;
 
 // An upgraded building gives more (data/buildings.js LEVELS).
 export function capacityMw(sector) {

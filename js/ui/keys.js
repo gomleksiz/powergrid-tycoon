@@ -15,7 +15,7 @@ export function openKeyList() {
   return dlg;
 }
 
-export function bindKeys({ loop, isPlaying, onMenu, onTab, onTree, onNews, onMute }) {
+export function bindKeys({ loop, isPlaying, onMenu, onTab, onTree, onNews, onMute, onBoard }) {
   // Capture phase: still works when focus was left on a hidden element.
   window.addEventListener('keydown', (e) => {
     if (e.key === '?' && !isDialogOpen()) { e.preventDefault(); openKeyList(); return; }
@@ -39,6 +39,8 @@ export function bindKeys({ loop, isPlaying, onMenu, onTab, onTree, onNews, onMut
       onNews();
     } else if (k === 'm') {
       onMute();
+    } else if (k === 'd') {
+      onBoard?.();
     }
   }, true);
 }

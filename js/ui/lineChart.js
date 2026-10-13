@@ -1,8 +1,11 @@
 // A small line chart on a canvas (no library). Sharp on any devicePixelRatio.
 
 const PAD = { l: 52, r: 8, t: 8, b: 20 };
+const PAD_COMPACT = { l: 40, r: 4, t: 6, b: 6 };   // version 1.2: small charts on the live board
 
-export function drawLineChart(canvas, series, { format = (v) => String(Math.round(v)), min = null, max = null } = {}) {
+// Shorter series (started later, for example after loading an old save) are drawn at the right end.
+export function drawLineChart(canvas, series, { format = (v) => String(Math.round(v)), min = null, max = null, compact = false } = {}) {
+  const pad = compact ? PAD_COMPACT : PAD;
   const dpr = window.devicePixelRatio || 1;
   const w = canvas.clientWidth || 300;
   const h = canvas.clientHeight || 140;
@@ -17,8 +20,8 @@ export function drawLineChart(canvas, series, { format = (v) => String(Math.roun
   const lo = min ?? Math.min(0, ...all);
   const hi = max ?? Math.max(...all, lo + 1);
   const n = Math.max(...series.map((s) => s.values.length));
-  const x = (i) => PAD.l + (i / Math.max(1, n - 1)) * (w - PAD.l - PAD.r);
-  const y = (v) => PAD.t + (1 - (v - lo) / (hi - lo || 1)) * (h - PAD.t - PAD.b);
+  const x = (i) => pad.l + (i / Math.max(1, n - 1)) * (w - pad.l - pad.r);
+  const y = (v) => pad.t + (1 - (v - lo) / (hi - lo || 1)) * (h - pad.t - pad.b);
 
   // grid and labels
   ctx.font = "12px 'Atkinson Hyperlegible', system-ui, sans-serif";
@@ -27,17 +30,18 @@ export function drawLineChart(canvas, series, { format = (v) => String(Math.roun
   ctx.lineWidth = 1;
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
-  for (let k = 0; k <= 3; k++) {
-    const v = lo + ((hi - lo) * k) / 3;
+  const lines = compact ? 1 : 3;
+  for (let k = 0; k <= lines; k++) {
+    const v = lo + ((hi - lo) * k) / lines;
     ctx.beginPath();
-    ctx.moveTo(PAD.l, Math.round(y(v)) + 0.5);
-    ctx.lineTo(w - PAD.r, Math.round(y(v)) + 0.5);
+    ctx.moveTo(pad.l, Math.round(y(v)) + 0.5);
+    ctx.lineTo(w - pad.r, Math.round(y(v)) + 0.5);
     ctx.stroke();
-    ctx.fillText(format(v), PAD.l - 6, y(v));
+    ctx.fillText(format(v), pad.l - 6, y(v));
   }
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
-  for (let yr = 0; yr <= n / 12; yr += 5) ctx.fillText(String(2030 + yr), x(yr * 12), h - PAD.b + 4);
+  if (!compact) for (let yr = 0; yr <= n / 12; yr += 5) ctx.fillText(String(2030 + yr), x(yr * 12), h - pad.b + 4);
 
   // lines (each series also gets a dash style, so color is not needed)
   const DASH = [[], [6, 4], [2, 3]];
@@ -46,7 +50,8 @@ export function drawLineChart(canvas, series, { format = (v) => String(Math.roun
     ctx.lineWidth = 2;
     ctx.setLineDash(DASH[i % DASH.length]);
     ctx.beginPath();
-    s.values.forEach((v, j) => (j ? ctx.lineTo(x(j), y(v)) : ctx.moveTo(x(j), y(v))));
+    const off = n - s.values.length;
+    s.values.forEach((v, j) => (j ? ctx.lineTo(x(j + off), y(v)) : ctx.moveTo(x(j + off), y(v))));
     ctx.stroke();
   });
   ctx.setLineDash([]);

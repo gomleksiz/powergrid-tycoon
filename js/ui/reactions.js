@@ -9,7 +9,7 @@ import { news } from '../core/session.js';
 import { T } from '../data/text.js';
 import { NODES } from '../data/techTree.js';
 import { getPrefs } from './prefs.js';
-import { showEventCard, showWarning, showDisasterReport } from './modals.js';
+import { showEventCard } from './modals.js';
 import { sfx, setMood } from '../audio/audio.js';
 import { dateLabel } from '../core/time.js';
 import { signedMoney, signed } from './format.js';
@@ -35,18 +35,20 @@ export function bindReactions({ loop, endScreen }) {
     if (getPrefs().pauseOnProject) loop.setSpeed(0);
   });
 
+  // Version 1.2: warnings and disaster reports are news lines (details on the live board), not dialogs.
   on('disaster:warning', (w) => {
-    news(T.news.warning({ name: T.disasterNames[w.type], weeks: w.weeks }), 'warn');
+    const s = getState();
+    const mine = w.sectors.map((id) => s.sectors[id]).filter((x) => x.owned).map((x) => x.name);
+    const prepped = (w.prepped ?? []).map((id) => s.sectors[id].name);
+    news(T.news.warningLine({ name: T.disasterNames[w.type], weeks: w.weeks, mine, prepped }), 'warn');
     sfx('alert');
     tenseNow();
-    holdWhile(showWarning(w));
   });
 
   on('disaster:hit', (r) => {
-    news(T.news.disaster({ name: T.disasterNames[r.type] }), 'error');
+    news(T.news.disasterLine({ name: T.disasterNames[r.type], report: r }), 'error');
     sfx(r.type === 'heatwave' ? 'alert' : 'storm');
     tenseNow();
-    holdWhile(showDisasterReport(r));
   });
 
   // A rival only shows in the news bar; the game does not stop.

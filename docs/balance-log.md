@@ -77,3 +77,41 @@ All 10 targets pass: balanced wins at month 200–235 in 18/20 (avg 215); custom
 Easy: every active bot wins (months 136–178). Hard: as in 1.0, Monopoly is hard to reach (1/20), and bots that borrow a lot can go bankrupt (Singularity 10/20, Utopia 12/20).
 
 A company without own plants (a test bot with no plants and no batteries) has 3–6 outage hours a month on average after 2045, more than 2 h in 43–60 of the last 60 months. The bots with plants have almost none.
+
+## Version 1.2 (a harder game)
+
+The player had $1M by month 30 with nothing to spend it on. Before 1.2 the balanced bot had $1.16M at month 40 and $20M at month 100, and a bot with a 1.3× price did even better. The rule changes are in `docs/design-notes.md`; these are the numbers tuned with the bots.
+
+| # | Change | Value | Where | Why |
+| --- | --- | --- | --- | --- |
+| 18 | Customer service cost | $3 / $8 / $20 / $400 a month (Low / Medium / High / Corporate) | `data/balance.js` (`TIERS`) | $4 / $10 / $25 / $500 gave losses for 20 months at the start, and early bankruptcies. |
+| 19 | New customer rate | 0.016 → 0.009 | `data/balance.js` | The towns are 1.5 × bigger. At 0.016 the balanced bot had 41,000 customers at month 100 (target 15,000–25,000). |
+| 20 | Start customers | Easy 2,400 → 3,000, Normal 2,000 → 2,500, Hard 1,600 → 2,200 | `data/difficulty.js` | With 2,000 and service costs, month 1 lost money; now month 1 on Normal = + $7,000 before tax. |
+| 21 | Monopoly cash | Easy $90M → $40M, Normal $150M → $65M, Hard $180M → $75M | `data/difficulty.js` | Lower margins. At $150M the balanced bot did not win before 2049. |
+| 22 | Monopoly share | 70 / 80 / 82 % → 68 / 78 / 80 % | `data/difficulty.js` | Stronger rivals and bigger towns; the Monopoly bot stayed at 79.7–80 % in many seeds. |
+| 23 | Hard start | cash $80,000 → $150,000; loan limit $150,000 → $250,000; wholesale $0.055 → $0.052; disasters × 1.5 → × 1.25; rival growth × 1.5 → × 1.1 | `data/difficulty.js` | With 2 rivals from month 1, every bot went bankrupt by month 11. |
+
+### Bot changes (tools)
+
+- Substations: also when new customers wait for a connection, and the bot borrows for them.
+- `emergencies()`: repair broken buildings at once; call an emergency crew at 15 damage or more (not the penny-pincher).
+- Loans: repay above 3 months of costs (was 6); borrow for an investment only up to 60 % of the loan limit.
+- Event cards: take the first choice, but not a payment the bot cannot afford (3 months of costs); in a fuel crisis raise prices when cash is short.
+- Expansion: a sector full of strong rival customers is worth less.
+- Path bots: default budget and price in Phase 1, their own plan from month 41.
+- Singularity bot: researches Battery Banks early, builds a fission plant after month 80, and opens sectors only with 3 months of costs in cash.
+- Monopoly bot: campaigns from month 120 (was 150).
+
+### Results (20 seeds)
+
+**Normal: 10/10 targets pass.** Balanced wins at 200–235 in 19/20 (avg 213); customers at month 40 / 100 / 180 in range in 16 / 17 / 20 of 20; Monopoly 18/20; Singularity 16/20; Utopia 18/20; penny-pincher 16/20; fastest win not before month 160 in 125/140.
+
+Money (balanced bot, seed 1): $290,000 at month 40 (1.1: $1.16M), $4.5M at month 100 (1.1: $20M). The cash is spent on substations, repairs, rivals and plants.
+
+Long outages (balanced bot, 10 seeds): a sector has more than 24 outage hours in about 1 % of months. Without emergency crews and repairs the worst month is 392 h; with them it is 227 h.
+
+**Easy:** every active bot wins (months 138–173). **Hard:** harder than 1.1. The balanced bot wins Monopoly in 6/20 and reaches 2049 with grade S in 10/20; Singularity 3/20, Utopia 5/20; the Monopoly path bot does not win. Check Hard in playtests.
+
+### Version 1.2, part 2 (board, loans, local crews)
+
+No game numbers changed. Bots use the new loan step (`loanStep`, `loanLimit`) and get Storm Prep by itself. Normal: still 10/10 (balanced wins 20/20, avg 213; Monopoly 19/20; Singularity 16/20; Utopia 19/20). Hard: Singularity 1/20 (was 3/20; few runs, so it moves), Utopia 5/20, balanced Monopoly 6/20.

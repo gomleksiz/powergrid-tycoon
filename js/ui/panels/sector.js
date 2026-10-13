@@ -9,19 +9,20 @@ import { NODES } from '../../data/techTree.js';
 import { ui } from '../uiState.js';
 import { on } from '../../core/bus.js';
 import { getState } from '../../core/store.js';
-import { buildAllowed, capexCost, canUpgrade, upgradeCost } from '../../sim/build.js';
+import { canBuildIn, capexCost, canUpgrade, upgradeCost } from '../../sim/build.js';
 import { outageAdvice, repairWeeksHere } from '../../sim/advice.js';
+import { buildingRepairCost, canRepairBuilding, stationedNow, assignedTotal } from '../../sim/repair.js';
 import { isTierUnlocked } from '../../sim/effects.js';
 import { money, numFull, hours } from '../format.js';
 import { dispatch } from '../../core/store.js';
 import { sectorStatus, capacityMw, peakMw } from '../../sim/grid.js';
-import { REPAIR, TIERS as TIER_DATA } from '../../data/balance.js';
+import { REPAIR, TIERS as TIER_DATA, CONTRACTORS } from '../../data/balance.js';
 import { canOpenSector, openCost } from '../../sim/growth.js';
 import { sectorPotential } from '../../sim/setup.js';
 import { warningsFor, canPrep, weekIndex } from '../../sim/disasters.js';
 import { DISASTER } from '../../data/disasters.js';
 
-export function createSectorPanel({ onBuild }) {
+export function createSectorPanel() {
   const head = h('div', { class: 'sector-head' });
   const info = h('div');
   const openBox = h('div');
@@ -36,10 +37,24 @@ export function createSectorPanel({ onBuild }) {
     onclick: () => dispatch({ type: 'sector/priority', payload: { sector: selected(getState()).id, priority: p } }),
   }, T.priorities[p]));
   const build = h('div', { class: 'build-list' });
+  // Version 1.2: a local crew of stationed technicians.
+  const crewCount = h('span', { class: 'num crew-count' });
+  const crewInfo = h('p', { class: 'small' });
+  const assign = (d) => { const sec = selected(getState()); dispatch({ type: 'sector/assign', payload: { sector: sec.id, count: (sec.assigned ?? 0) + d } }); };
+  const crewBox = h('div', {},
+    h('h4', {}, T.localCrewTitle),
+    h('div', { class: 'crew-row' },
+      h('button', { class: 'btn', 'aria-label': T.crewFewer, onclick: () => assign(-1) }, '−'),
+      crewCount,
+      h('button', { class: 'btn', 'aria-label': T.crewMore, onclick: () => assign(1) }, '+'),
+      h('button', { class: 'btn', onclick: () => assign(4) }, '+4')),
+    crewInfo,
+    h('p', { class: 'dim small' }, T.localCrewHelp));
+  const buildHere = (type) => dispatch({ type: 'build/sector', payload: { type, sector: selected(getState()).id } });
 
   const el = h('div', { class: 'panel-body' },
     h('section', { class: 'card' }, head, warnBox, info, openBox),
-    h('section', { class: 'card grid-card' }, h('h3', {}, T.gridTitle), grid, crew, advice,
+    h('section', { class: 'card grid-card' }, h('h3', {}, T.gridTitle), grid, crew, advice, crewBox,
       h('h4', {}, T.repairPriority), h('div', { class: 'seg seg3', role: 'group', 'aria-label': T.repairPriority }, prioButtons)),
     h('section', { class: 'card' }, h('h3', {}, T.customersTitle), customers),
     h('section', { class: 'card' }, h('h3', {}, T.buildingsTitle), buildings, h('p', { class: 'dim small' }, T.upgradeHelp)),
@@ -110,8 +125,13 @@ export function createSectorPanel({ onBuild }) {
           row(T.hParts.shortage, hours(p.shortage)),
           row(T.hParts.R, `× ${p.R.toFixed(2)}`),
           row(T.hParts.total, hours(sec.lastH), 'total'))),
-        h('p', { class: 'dim small' }, T.capacityLine(capacityMw(sec).toFixed(1), peakMw(s, sec).toFixed(1))));
+        h('p', { class: 'dim small' }, T.capacityLine(capacityMw(sec).toFixed(1), peakMw(s, sec).toFixed(1))),
+        sec.waiting > 0 ? h('p', { class: 'small warn' }, T.waitingSector(sec.waiting)) : null,
+        sec.contractors > 0 ? h('p', { class: 'small' }, T.contractorsLine(CONTRACTORS.TECHS, sec.contractors)) : null);
       REPAIR.PRIORITIES.forEach((pr, i) => prioButtons[i].setAttribute('aria-pressed', String(sec.priority === pr)));
+      const n = sec.assigned ?? 0;
+      crewCount.textContent = String(n);
+      crewInfo.textContent = T.localCrewLine(n, stationedNow(s)[sec.id] ?? 0, assignedTotal(s));
 
       // Who repairs here, and what the player can do about the outages (version 1.1).
       crew.hidden = sec.damage <= 0;
@@ -128,7 +148,7 @@ export function createSectorPanel({ onBuild }) {
           h('span', { class: 'small' }, T.advice[t.id](t.details)),
           t.action ? h('button', {
             class: 'btn',
-            onclick: () => (t.action.build ? onBuild(t.action.build) : dispatch(t.action)),
+            onclick: () => (t.action.build ? buildHere(t.action.build) : dispatch(t.action)),
           }, t.action.build ? T.adviceBuild : T.adviceDo) : null))),
       ] : null));
     } else {
@@ -138,7 +158,7 @@ export function createSectorPanel({ onBuild }) {
 
     const bKey = sec.buildings.map((b) => {
       const up = canUpgrade(s, b.id);
-      return `${b.id}:${levelOf(b)}:${b.status}:${!!b.upgrading}:${up.ok ? 'ok' : up.reason}:${upgradeCost(s, b)}`;
+      return `${b.id}:${levelOf(b)}:${b.status}:${!!b.upgrading}:${up.ok ? 'ok' : up.reason}:${upgradeCost(s, b)}:${!!b.broken}:${b.repairWeeks ?? 0}:${canRepairBuilding(s, b, sec)}`;
     }).join('|') + `|${sec.id}|${sec.owned}`;
     fillKeyed(buildings, bKey, () => (sec.buildings.length
       ? h('ul', { class: 'plain building-list' }, sec.buildings.map((b) => buildingRow(s, sec, b)))
@@ -148,17 +168,17 @@ export function createSectorPanel({ onBuild }) {
       fillKeyed(build, 'locked', () => h('p', { class: 'dim small' }, T.buildNeedsOwned));
       return;
     }
-    const key = BUILDING_IDS.map((id) => `${buildAllowed(s, id).reason ?? 'ok'}:${capexCost(s, BUILDINGS[id].cost)}`).join('|');
+    const key = BUILDING_IDS.map((id) => `${canBuildIn(s, id, sec.id).reason ?? 'ok'}:${capexCost(s, BUILDINGS[id].cost)}`).join('|') + `|${sec.id}`;
     fillKeyed(build, key, () => BUILDING_IDS.map((id) => {
       const b = BUILDINGS[id];
-      const ok = buildAllowed(s, id);
+      const ok = canBuildIn(s, id, sec.id);
       const why = ok.ok ? T.buildingInfo[id]
         : ok.reason === 'locked' ? T.tierLocked(NODES[ok.tech].name)
           : T.buildReasons[ok.reason];
       return h('button', {
         class: `btn build-btn ${ok.ok ? '' : 'off'}`,
         disabled: !ok.ok && ok.reason === 'locked',
-        onclick: () => (ok.ok ? onBuild(id) : null),
+        onclick: () => (ok.ok ? buildHere(id) : null),
         'aria-label': `${T.buildings[id]}, ${money(capexCost(s, b.cost))}. ${why}`,
       },
       h('span', { class: 'bb-name' }, T.buildings[id]),
@@ -179,7 +199,13 @@ export function createSectorPanel({ onBuild }) {
   function buildingRow(s, sec, b) {
     const up = canUpgrade(s, b.id);
     let action = null;
-    if (sec.owned && b.status === 'active') {
+    if (sec.owned && b.broken) {
+      action = b.repairWeeks > 0 ? h('span', { class: 'tag' }, T.repairingTag(b.repairWeeks))
+        : h('button', {
+          class: 'btn btn-primary', disabled: !canRepairBuilding(s, b, sec),
+          onclick: () => dispatch({ type: 'building/repair', payload: { id: b.id } }),
+        }, T.repairBuilding(money(buildingRepairCost(b))));
+    } else if (sec.owned && b.status === 'active') {
       if (b.upgrading) action = h('span', { class: 'tag' }, T.upgrading);
       else if (up.reason === 'max') action = h('span', { class: 'dim small' }, T.upgradeMax);
       else {
@@ -191,7 +217,8 @@ export function createSectorPanel({ onBuild }) {
     }
     return h('li', { class: 'building-row' },
       h('span', {}, h('strong', {}, T.buildingLevel(T.buildings[b.type], levelOf(b))),
-        h('span', { class: 'dim small' }, ' · ', b.status === 'active' ? outputText(b) : T.underConstruction)),
+        b.broken ? h('span', { class: 'small bad' }, ' · ✕ ', T.brokenTag)
+          : h('span', { class: 'dim small' }, ' · ', b.status === 'active' ? outputText(b) : T.underConstruction)),
       action);
   }
 

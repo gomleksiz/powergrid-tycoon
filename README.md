@@ -30,19 +30,20 @@ Debug: open the game with `?debug=1`, then press **F9** for the debug panel (spe
 
 ## How to play
 
-You start with 1 town, Home Valley, and 2,000 customers.
+You start with 1 town, Home Valley, 2,500 customers (Normal) and 1 substation. A rival comes from month 1.
 
-1. **Money:** set the budget (Budget tab) and the price of each customer tier. Watch the monthly report.
-2. **Grid:** old lines and storms cause outage hours. Outages make customers leave. Raise Maintenance, hire technicians, set repair priority.
+1. **Money:** set the budget (Budget tab) and the price of each customer tier. Each budget slider shows what it does now and where more money does nothing. The bank lends more as you grow. Watch the monthly report.
+2. **Grid:** old lines and storms cause outage hours. Outages make customers leave. Raise Maintenance, hire technicians, set repair priority. New customers connect only while your substations have room: build substations as you grow.
 3. **Tech:** engineers research (Research tab, tech tree with T); technicians deploy tech in each sector (Projects tab).
 4. **Grow:** from month 41 open new sectors (tap a sector, "Open this sector"). Unlock Medium, High and Corporate customers with tech.
 5. **Meters:** keep Customer, Employee and Government Satisfaction up. Tap a meter to see why it moves.
-6. **Rivals and disasters:** Apex Energy and Volt Dynamics take customers; storms, floods, quakes and heatwaves damage the grid.
+6. **Rivals and disasters:** Apex Energy, Volt Dynamics and Nova Power take customers and run sales drives (Hard: 2 rivals from month 1). Storms, floods, quakes and heatwaves damage the grid and can break buildings; strikes, fires and cyber attacks come as event cards.
 7. **Offices:** hire a Project Manager (Staff tab). It warns you about idle staff and stuck projects, and can start research and deployments by itself. Or press **Schedule all** in the Projects tab.
-8. **Outages:** the Sector tab shows how many technicians repair there (also 🔧 on the map) and **What to do**, with a button for each tip.
-9. **Growth and power:** from 2038 the towns grow each year, and each home needs a bit more power at the peak. The region gets power shortages; own plants keep the lights on. Upgrade buildings to level 2 and 3 (Sector tab). Sell power to the government in a shortage (Budget tab → Energy market).
-10. **Marketing:** a Marketing department runs price campaigns (Customers tab), for example 50% off for 6 months. When you are cheaper than a rival, its customers switch to you and it starts a price war.
-11. **Win** one of 3 paths (Goals tab) and keep it for 3 months: Corporate Monopoly, Technological Singularity or Decentralized Utopia. You lose by bankruptcy, a revoked license (GS below 10) or customer collapse.
+8. **Live board:** the 📊 Board (key D) shows the whole company: money, power use and production, every city with its customers, rival and outages, rival prices and disasters. 🗺 Map shows the map. Build from the Sector tab: the game picks the place.
+9. **Outages:** the Sector tab shows how many technicians repair there (also 🔧 on the map) and **What to do**, with a button for each tip: repair a broken building, call an emergency crew (contractors start at once and do not strike), hire, upgrade. Station technicians in a city (Local crew) so they fix it first.
+10. **Growth and power:** from 2038 the towns grow each year, and each home needs a bit more power at the peak. The region gets power shortages; own plants keep the lights on. Upgrade buildings to level 2 and 3 (Sector tab). Sell power to the government in a shortage (Budget tab → Energy market).
+11. **Marketing:** a Marketing department runs price campaigns (Customers tab), for example 50% off for 6 months. When you are cheaper than a rival, its customers switch to you and it starts a price war.
+12. **Win** one of 3 paths (Goals tab) and keep it for 3 months: Corporate Monopoly, Technological Singularity or Decentralized Utopia. You lose by bankruptcy, a revoked license (GS below 10) or customer collapse.
 
 The tutorial (on by default for Easy and Normal) teaches the first steps.
 
@@ -64,7 +65,7 @@ The tutorial (on by default for Easy and Normal) teaches the first steps.
 ## Put it online
 
 ```bash
-npm run package          # → dist/powergrid-tycoon-1.1.0.zip (index.html at the top level)
+npm run package          # → dist/powergrid-tycoon-1.2.0.zip (index.html at the top level)
 ```
 
 The ZIP has only the files the game needs. Any static host works:
@@ -97,7 +98,7 @@ docs/           design-notes.md (choices where the design has gaps), balance-log
 
 ## Saves
 
-`saveVersion` is still 1 in version 1.1.0: all new fields have start values in `createState()`, so 1.0 saves load as they are. Each later change to the game state needs a migration step in `js/save/migrate.js` (new fields get their start value from `createState()` by themselves).
+`saveVersion` is still 1 in version 1.2.0: all new fields have start values in `createState()`, so 1.0 and 1.1 saves load as they are. Each later change to the game state needs a migration step in `js/save/migrate.js` (new fields get their start value from `createState()` by themselves).
 
 ## Progress
 
@@ -105,6 +106,7 @@ docs/           design-notes.md (choices where the design has gaps), balance-log
 - [x] Step 13 – Balance with bots: all 10 targets pass on Normal (`docs/balance-log.md`)
 - [x] Step 14 – Release build: version 1.0.0, debug panel, icons, manifest, package
 - [x] Version 1.1 – Project Manager, Schedule all, outage help and crews on the map, growth, regional shortages and selling to the government, upgrades, Marketing campaigns and price wars; alerts pause only while they are open (`docs/design-notes.md`, `docs/balance-log.md`)
+- [x] Version 1.2 – a harder game: rivals from month 1, a third rival and sales drives, bigger towns with a connection limit, customer service costs, stronger price effects, broken buildings, emergency crews, strikes and new event cards; then a live board, building from the panel, local crews, budget effects, loans that grow, disasters without pop-ups (`docs/design-notes.md`, `docs/balance-log.md`)
 - [ ] Playtests with people (3 for each difficulty) and tests on real devices: iPhone (Safari), Android (Chrome), iPad, PC (Chrome, Firefox, Edge)
 - [ ] Put it online
 - Later (after 1.0): export and import of save files; the open question about power lines

@@ -25,6 +25,10 @@ export const SECTOR_TYPES = {
 // Home Valley is the capital: 30 % bigger than other towns (balance step 13).
 export const HOME = { type: 'town', name: 'Home Valley', potentialMult: 1.3 };
 
+// Version 1.2: more homes and firms in every sector (× 1.5). New customers still need
+// a free connection (substation capacity) and must be won from the rivals.
+export const POTENTIAL_MULT = 1.5;
+
 // Names are picked with the map seed.
 export const SECTOR_NAMES = {
   town: ['Maple Town', 'Old Mill', 'Brookside', 'Kingsford', 'Ashby'],
@@ -43,7 +47,7 @@ export const SECTOR_START = {
   priority: 'normal',
 };
 
-// Home Valley starts with 2 substations (the month 1 check has 2 buildings).
-export const HOME_BUILDINGS = ['substation', 'substation'];
+// Home Valley starts with 1 substation (version 1.2; before: 2, far more than the start peak).
+export const HOME_BUILDINGS = ['substation'];
 // A newly opened sector gets 1 substation in the opening cost.
 export const NEW_SECTOR_BUILDINGS = ['substation'];

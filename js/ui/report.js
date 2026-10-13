@@ -20,7 +20,7 @@ export function mountReport(root, { isEnabled = () => true } = {}) {
   function show(r) {
     const m = r.money;
     const outs = [
-      [T.energy, m.energy], [T.wages, m.wages], [T.upkeep, m.upkeep], [T.budget, m.budget],
+      [T.energy, m.energy], [T.wages, m.wages], [T.upkeep, m.upkeep], [T.service, m.service ?? 0], [T.budget, m.budget],
       [T.interest, m.interest], [T.penalties, m.penalties], [T.tax, m.tax],
     ].filter(([, v]) => Math.abs(v) >= 1);
 
@@ -42,6 +42,7 @@ export function mountReport(root, { isEnabled = () => true } = {}) {
       h('div', { class: `rl total ${m.net >= 0 ? 'good' : 'bad'}` },
         h('span', {}, T.net), h('span', { class: 'num', title: moneyFull(m.net) }, signedMoney(m.net))),
       h('p', { class: 'small' }, T.customersLine(num(r.customers.gained), num(r.customers.lost))),
+      r.customers.waiting > 0 ? h('p', { class: 'small warn' }, T.waitingLine(num(r.customers.waiting))) : null,
       r.meters ? h('div', { class: 'small report-meters' }, ['cs', 'es', 'gs'].map((k) => {
         const a = Math.round(r.meters.before[k]);
         const b = Math.round(r.meters.after[k]);

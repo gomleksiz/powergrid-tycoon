@@ -4,7 +4,7 @@ import { ADVISOR_RULES, SUGGESTED_BUDGET } from '../data/advisorRules.js';
 import { NODES, NODE_IDS } from '../data/techTree.js';
 import { diff } from '../data/difficulty.js';
 import { globalEffects, STATUS } from './effects.js';
-import { wages, upkeep, interest, budgetDollars, canTakeLoan } from './economy.js';
+import { monthlyCosts, canTakeLoan } from './economy.js';
 import { backlogWeeks } from './repair.js';
 import { totalStaff, managementThreshold } from './workforce.js';
 import { averagePrice } from './satisfaction.js';
@@ -15,8 +15,6 @@ import { neighbors } from './mapgen.js';
 export function advisorOn(state) {
   return diff(state).advisorAlways || globalEffects(state).advisor;
 }
-
-const monthlyCosts = (s) => wages(s) + upkeep(s) + interest(s) + budgetDollars(s).total;
 
 // The cheapest research the player can start now (optionally in 1 branch).
 export function nextResearch(state, branch) {

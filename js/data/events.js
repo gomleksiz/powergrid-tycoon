@@ -2,11 +2,13 @@
 // when: conditions (all must hold). weight: how often it comes. choices: effects.
 // Effect keys (read by sim/eventCards.js):
 //   cash, cs, es, gs (add), rp (to research), wageMult (add),
-//   wholesale / price / supply: { mult or share, months } (a temporary change).
+//   wholesale / price / supply / peak: { mult or share, months } (a temporary change).
+//   Version 1.2: strike (months), breakBuilding (type), damage (points in 1 random sector),
+//   staff: { role, count } (people leave).
 
 export const EVENT_RULES = {
-  CHANCE: 1 / 6,          // each month, when no card is waiting
-  COOLDOWN: 3,            // months after a card
+  CHANCE: 1 / 4,          // each month, when no card is waiting (version 1.2: 1 / 6 → 1 / 4)
+  COOLDOWN: 2,            // months after a card (version 1.2: 3 → 2)
 };
 
 export const EVENTS = {
@@ -57,6 +59,42 @@ export const EVENTS = {
     choices: [
       { effects: { price: { mult: 0.9, months: 3 }, cs: 5 } },
       { effects: { cs: -3, gs: -3 } },
+    ],
+  },
+  // ---------- version 1.2 ----------
+  unionStrike: {
+    weight: 3, when: { minMonth: 18, minStaff: 10 },
+    choices: [
+      { effects: { wageMult: 0.10, es: 5 } },
+      { effects: { strike: 2, es: -10 } },
+    ],
+  },
+  substationFire: {
+    weight: 3, when: { minMonth: 6, hasBuilding: 'substation' },
+    choices: [
+      { effects: { cash: -30_000 } },
+      { effects: { breakBuilding: 'substation' } },
+    ],
+  },
+  heatDome: {
+    weight: 2, when: { minMonth: 12 },
+    choices: [
+      { effects: { peak: { mult: 1.15, months: 2 }, cs: -3 } },
+      { effects: { peak: { mult: 1.3, months: 2 } } },
+    ],
+  },
+  cyberAttack: {
+    weight: 2, when: { minMonth: 30 },
+    choices: [
+      { effects: { cash: -60_000, gs: 2 } },
+      { effects: { damage: 35 } },
+    ],
+  },
+  poachEngineers: {
+    weight: 2, when: { minMonth: 24, minStaff: 10 },
+    choices: [
+      { effects: { wageMult: 0.05 } },
+      { effects: { staff: { role: 'engineers', count: 3 }, es: -5 } },
     ],
   },
 };

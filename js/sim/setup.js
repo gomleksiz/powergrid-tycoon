@@ -1,7 +1,7 @@
 // Start values for the sectors and the tech tree of a new game.
 
 import { mapgen, layoutSectors, findFreeSpot } from './mapgen.js';
-import { SECTOR_START, HOME_BUILDINGS, SECTOR_TYPES, HOME } from '../data/sectors.js';
+import { SECTOR_START, HOME_BUILDINGS, SECTOR_TYPES, HOME, POTENTIAL_MULT } from '../data/sectors.js';
 import { BUILDINGS } from '../data/buildings.js';
 import { NODES, NODE_IDS } from '../data/techTree.js';
 import { STATUS } from './effects.js';
@@ -14,7 +14,7 @@ export function emptyTiers(v = 0) {
 // It grows over time (sector.growth, version 1.1).
 export function sectorPotential(sector) {
   const base = SECTOR_TYPES[sector.type].potential;
-  const mult = sector.home ? HOME.potentialMult : 1;
+  const mult = (sector.home ? HOME.potentialMult : 1) * POTENTIAL_MULT;
   return Object.fromEntries(Object.entries(base).map(([t, n]) => [t, Math.round(n * mult * (sector.growth?.[t] ?? 1))]));
 }
 
@@ -43,6 +43,11 @@ export function createSector(def) {
     rival: null,
     growth: emptyTiers(1), // more homes and firms over time (version 1.1)
     repairTechs: 0,        // technicians that repaired here last week
+    waiting: 0,            // version 1.2: new customers last month that found no free connection
+    contractors: 0,        // version 1.2: weeks left for an emergency crew here
+    noRivalUntil: 0,       // version 1.2: no rival can enter before this month (after a buyout)
+    assigned: 0,           // version 1.2: technicians stationed here (they repair here first)
+    hist: { c: [], r: [], h: [] },   // version 1.2: customers, rival customers and outage hours each month (live board)
   };
 }
 

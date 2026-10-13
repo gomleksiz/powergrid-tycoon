@@ -12,7 +12,8 @@ import { emptyTiers, sectorPotential, potentialTotal } from './setup.js';
 import { spendCapex } from './economy.js';
 import { priceCut, effectivePrice, campaignBuzz } from './marketing.js';
 
-export const enterMonth = (state, id) => diff(state).firstRivalMonth + RIVALS[id].enterAfterFirst;
+// The month a rival can come (difficulty). null = never.
+export const enterMonth = (state, id) => diff(state).rivalMonths?.[id] ?? null;
 
 const sum = (o) => TIER_IDS.reduce((n, t) => n + (o?.[t] ?? 0), 0);
 const potentialOf = (s) => potentialTotal(s);
@@ -24,8 +25,8 @@ function sectorPrice(state, s) {
   return TIER_IDS.reduce((x, t) => x + s.customers[t] * state.prices[t], 0) / n * (1 - priceCut(state, s));
 }
 
-// The rival's price in this sector. It goes down in a price war (version 1.1).
-export const rivalPrice = (rv) => rv.price ?? RIVALS[rv.id].price;
+// The rival's price in this sector. It goes down in a price war (version 1.1) and a sales drive (1.2).
+export const rivalPrice = (rv) => (rv.price ?? RIVALS[rv.id].price) * (rv.drive > 0 ? RIVAL.DRIVE_PRICE : 1);
 
 // Rival customers that switch to the player in 1 tier, when the player is cheaper.
 export function winBackCount(n, mRival, m, buzz = 1) {
@@ -37,10 +38,11 @@ export function unservedShare(s) {
   return pot > 0 ? Math.max(0, pot - sum(s.customers) - sum(s.rival?.customers)) / pot : 0;
 }
 
-// Entry = 50 × Unserved + 2 × max(0, H − 12) + 30 × (m̄ − 1) + 20 × [CS < 30]
+// Entry = 50 × Unserved + 2 × max(0, H − 12) + 30 × (m̄ − 1) + 20 × [CS < 30] + 15 × [your sector]
 export function entryScore(state, s) {
   const H = s.owned ? s.lastH : 0;
   return RIVAL.ENTRY_UNSERVED * unservedShare(s)
+    + (s.owned ? RIVAL.ENTRY_OWNED : 0)
     + RIVAL.ENTRY_OUTAGE * Math.max(0, H - RIVAL.ENTRY_OUTAGE_FROM)
     + RIVAL.ENTRY_PRICE * (sectorPrice(state, s) - 1)
     + (state.meters.cs < METERS.LOW ? RIVAL.ENTRY_LOW_CS : 0);
@@ -58,18 +60,21 @@ export function isProtected(state, id) {
 function tryEnter(state, rng, rid) {
   const r = state.rivals.find((x) => x.id === rid);
   const m = state.time.month;
-  if (state.rivalPolicy.monopolyCharter || m < enterMonth(state, rid) || (m - enterMonth(state, rid)) % RIVAL.CHECK_EVERY !== 0) return null;
+  const from = enterMonth(state, rid);
+  if (state.rivalPolicy.monopolyCharter || from === null || m < from || (m - from) % RIVAL.CHECK_EVERY !== 0) return null;
+  // Version 1.2: each rival can be in a few sectors only (difficulty).
+  if (state.sectors.filter((x) => x.rival?.id === rid).length >= (diff(state).rivalMaxSectors ?? Infinity)) return null;
   let best = null;
   for (const s of state.sectors) {
-    if (s.rival || isProtected(state, s.id)) continue;
+    if (s.rival || isProtected(state, s.id) || (s.noRivalUntil ?? 0) > m) continue;
     const score = entryScore(state, s);
     // Ties go to a random sector (seeded).
     const key = score + rng.next() * 1e-6;
     if (!best || key > best.key) best = { s, score, key };
   }
   if (!best || best.score <= RIVAL.ENTRY_MIN) return null;
-  best.s.rival = { id: rid, strength: RIVAL.START_STRENGTH, customers: emptyTiers(), lowMonths: 0, H: 0, price: RIVALS[rid].price, war: false };
-  r.entered = true;
+  best.s.rival = { id: rid, strength: RIVAL.START_STRENGTH, customers: emptyTiers(), lowMonths: 0, H: 0, price: RIVALS[rid].price, war: false, drive: 0 };
+  if (r) r.entered = true;
   return { type: 'rival:enter', payload: { rival: rid, sector: best.s.id, name: best.s.name, score: +best.score.toFixed(1) } };
 }
 
@@ -85,9 +90,9 @@ export function rivalRevenue(s) {
   return TIER_IDS.reduce((x, t) => x + s.rival.customers[t] * TIERS[t].tariff * price, 0);
 }
 
-// Buyout = rival monthly revenue × 24 × (1.5 − GS ÷ 100)
+// Buyout = max(minimum, rival monthly revenue × 36) × (1.5 − GS ÷ 100)
 export function buyoutCost(state, s) {
-  return rivalRevenue(s) * RIVAL.BUYOUT_MONTHS * (1.5 - state.meters.gs / 100);
+  return Math.max(RIVAL.BUYOUT_MIN, rivalRevenue(s) * RIVAL.BUYOUT_MONTHS) * (1.5 - state.meters.gs / 100);
 }
 
 function overLimit(s) {
@@ -106,9 +111,16 @@ export function rivalsMonth(state, rng) {
     const def = RIVALS[rv.id];
     rv.H = rng.int(def.outage[0], def.outage[1]);
 
-    // Strength: + 3 a month, unless the player gives better service (fewer outage hours) there.
+    // Strength: + 3 a month; half of that when the player gives better service (fewer outage hours) there.
     const better = s.owned && s.lastH < rv.H;
-    if (!better) rv.strength += RIVAL.GROWTH * growth;
+    rv.strength += RIVAL.GROWTH * growth * (better ? RIVAL.BETTER_GROWTH : 1);
+    // Sales drive (version 1.2): a lower price and a push for some months.
+    if (rv.drive > 0) rv.drive -= 1;
+    else if (rng.chance(RIVAL.DRIVE_CHANCE * growth)) {
+      rv.drive = RIVAL.DRIVE_MONTHS;
+      rv.strength += RIVAL.DRIVE_STRENGTH;
+      if (s.owned) events.push({ type: 'news', payload: { key: 'rivalDrive', rival: rv.id, name: s.name, kind: 'warn' } });
+    }
     if (s.owned && overLimit(s)) rv.strength += RIVAL.OUTAGE_BONUS * growth;
     const cut = s.owned ? priceCut(state, s) : 0;
     if (cut > 0) rv.strength -= RIVAL.CUT_STRENGTH_PER_10 * Math.round(cut * 10);
@@ -136,19 +148,20 @@ export function rivalsMonth(state, rng) {
         s.customers[t] += n;
         won += n;
       }
-      const free = Math.max(0, pot[t] - s.customers[t] - rv.customers[t]);
+      const free = Math.max(0, Math.min(pot[t] - s.customers[t], pot[t] * RIVAL.NEW_MAX_SHARE) - rv.customers[t]);
       rv.customers[t] += roundChance(free * RIVAL.NEW_RATE * (rv.strength / RIVAL.NEW_STRENGTH_DIV), rng);
     }
 
     // Price war: an undercut rival lowers its price; it slowly goes back up after.
     const base = RIVALS[rv.id].price;
+    const own = rv.price ?? base;   // without the sales drive
     if (cheaper) {
       if (!rv.war) events.push({ type: 'rival:priceWar', payload: { rival: rv.id, sector: s.id, name: s.name } });
       rv.war = true;
-      rv.price = Math.max(base * RIVAL.WAR_FLOOR, mRival - RIVAL.WAR_STEP);
+      rv.price = Math.max(base * RIVAL.WAR_FLOOR, own - RIVAL.WAR_STEP);
     } else {
       rv.war = false;
-      rv.price = Math.min(base, mRival + RIVAL.WAR_RECOVER);
+      rv.price = Math.min(base, own + RIVAL.WAR_RECOVER);
     }
 
     // The rival leaves at strength 0, or after 6 months under 5 % of the customers.
@@ -209,6 +222,7 @@ export function buyout(state, sectorId) {
   spendCapex(state, buyoutCost(state, s));   // an investment: it counts for net worth
   for (const t of TIER_IDS) if (g.unlockTier.includes(t)) s.customers[t] += s.rival.customers[t];
   s.rival = null;
+  s.noRivalUntil = state.time.month + RIVAL.BUYOUT_BAN;
   return true;
 }
 

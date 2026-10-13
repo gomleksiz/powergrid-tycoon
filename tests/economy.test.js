@@ -9,27 +9,36 @@ import { createRng } from '../js/core/rng.js';
 
 const near = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} ≠ ${b}`);
 
-test('month 1 on Normal = + $4,000 before tax (section 9)', () => {
+// Version 1.2: 2,500 customers, 1 substation, customer service $3 each (section 9 had + $4,000).
+test('month 1 on Normal = + $7,000 before tax', () => {
   const m = monthlyMoney(createState(1, 'normal'));
-  near(m.revenue, 100_000);
-  near(m.energy, 40_000);
+  near(m.revenue, 125_000);
+  near(m.energy, 50_000);
   near(m.wages, 33_000);
-  near(m.upkeep, 3_000);
-  near(m.budget, 20_000);
+  near(m.upkeep, 2_500);
+  near(m.service, 7_500);
+  near(m.budget, 25_000);
   near(m.interest, 0);
-  near(m.preTax, 4_000);
-  near(m.tax, 800);
-  near(m.net, 3_200);
+  near(m.preTax, 7_000);
+  near(m.tax, 1_400);
+  near(m.net, 5_600);
 });
 
 test('the month 1 check holds for many seeds', () => {
-  for (let seed = 1; seed < 40; seed++) near(monthlyMoney(createState(seed, 'normal')).preTax, 4_000);
+  for (let seed = 1; seed < 40; seed++) near(monthlyMoney(createState(seed, 'normal')).preTax, 7_000);
 });
 
 test('difficulty start values', () => {
   assert.equal(createState(1, 'easy').company.cash, 250_000);
-  assert.equal(createState(1, 'hard').company.cash, 80_000);
-  near(wholesalePrice(createState(1, 'hard')), 0.055);
+  assert.equal(createState(1, 'hard').company.cash, 150_000);
+  near(wholesalePrice(createState(1, 'hard')), 0.052);
+});
+
+test('customer service costs $ per customer of each tier (version 1.2)', () => {
+  const s = createState(1, 'normal');
+  const home = s.sectors.find((x) => x.owned);
+  home.customers = { low: 1000, medium: 100, high: 10, corporate: 1 };
+  near(monthlyMoney(s).service, 1000 * TIERS.low.serviceCost + 100 * TIERS.medium.serviceCost + 10 * TIERS.high.serviceCost + TIERS.corporate.serviceCost);
 });
 
 test('wholesale price: summer is × 1.25 of the base, winter × 1.15', () => {
@@ -48,7 +57,7 @@ test('extra own power sells back at 50 %', () => {
 test('upkeep = $2,000 per sector + $500 per building', () => {
   const s = createState(3, 'normal');
   s.sectors.find((x) => !x.owned).owned = true;
-  near(upkeep(s), 2 * 2_000 + 2 * 500);
+  near(upkeep(s), 2 * 2_000 + 1 * 500);   // Home Valley has 1 substation (version 1.2)
 });
 
 test('budget sliders always add up to 100 %', () => {
@@ -86,8 +95,8 @@ test('churn formula (section 6)', () => {
   near(churnRate('low', { H: 0, m: 1, cs: 60 }), 0.005);
   // H = 96 is 2 × the Low limit: + 2 % × 1
   near(churnRate('low', { H: 96, m: 1, cs: 60 }), 0.025);
-  // Price 1.5×: + 4 % × 0.5
-  near(churnRate('medium', { H: 0, m: 1.5, cs: 60 }), TIERS.medium.baseChurn + 0.02);
+  // Price 1.5×: + 10 % × 0.5 (version 1.2: 4 % → 10 %)
+  near(churnRate('medium', { H: 0, m: 1.5, cs: 60 }), TIERS.medium.baseChurn + 0.05);
   // CS < 30: × 1.5
   near(churnRate('high', { H: 0, m: 1, cs: 20 }), 0.0225);
   // Maximum 25 %
@@ -98,8 +107,12 @@ test('new customer factors', () => {
   near(fMarketing(4_000), 0.7);
   near(fMarketing(100_000), 2.0);
   near(fMarketing(4_000, 1), 0.77);
-  near(fPrice(0.6), 1.4);
-  near(fPrice(1.5), 0.5);
+  // Version 1.2: F price = 1 − 2.5 × (m − 1), in [0, 2]
+  near(fPrice(1), 1);
+  near(fPrice(0.6), 2);
+  near(fPrice(0.8), 1.5);
+  near(fPrice(1.2), 0.5);
+  near(fPrice(1.5), 0);
   near(fCS(60), 1.1);
   near(fCS(80), 1.4);
   near(newCustomers({ potential: 3000, n: 2000, rival: 0, fM: 1, fP: 1, fC: 1 }), 1000 * CUSTOMERS.NEW_RATE);
@@ -131,11 +144,11 @@ test('with the start sliders the company is close to break-even for 24 months', 
 
 test('loans: steps of $50,000 up to the limit; interest 1 % a month', () => {
   setState(createState(1, 'hard'));
-  for (let i = 0; i < 5; i++) dispatch({ type: 'loan/take' });
-  assert.equal(getState().company.debt, 150_000);
-  near(monthlyMoney(getState()).interest, 1_500);
+  for (let i = 0; i < 6; i++) dispatch({ type: 'loan/take' });
+  assert.equal(getState().company.debt, 250_000);
+  near(monthlyMoney(getState()).interest, 2_500);
   dispatch({ type: 'loan/repay' });
-  assert.equal(getState().company.debt, 100_000);
+  assert.equal(getState().company.debt, 200_000);
 });
 
 test('emergency loan when cash < $0', () => {

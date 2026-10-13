@@ -113,8 +113,9 @@ function tierBars(ctx, state) {
   ctx.textAlign = 'start';
 }
 
-const RIVAL_COLOR = { apex: 'rgba(255, 93, 108, 0.55)', volt: 'rgba(79, 141, 255, 0.55)' };
-const RIVAL_ICON = { apex: 'icon_apex', volt: 'icon_volt' };
+const RIVAL_COLOR = { apex: 'rgba(255, 93, 108, 0.55)', volt: 'rgba(79, 141, 255, 0.55)', nova: 'rgba(58, 209, 160, 0.55)' };
+const RIVAL_ICON = { apex: 'icon_apex', volt: 'icon_volt', nova: 'icon_nova' };
+const RIVAL_HATCH = { apex: 6, volt: 12, nova: 9 };
 
 function rivalIcons(ctx, state, big) {
   for (const s of state.sectors) {
@@ -138,7 +139,7 @@ function rivalIcons(ctx, state, big) {
 }
 
 overlays.rivals = (ctx, state) => {
-  for (const s of state.sectors) if (s.rival) hatch(ctx, sectorBounds(s.id), RIVAL_COLOR[s.rival.id], s.rival.id === 'apex' ? 6 : 12);
+  for (const s of state.sectors) if (s.rival) hatch(ctx, sectorBounds(s.id), RIVAL_COLOR[s.rival.id], RIVAL_HATCH[s.rival.id]);
 };
 
 const icons = {

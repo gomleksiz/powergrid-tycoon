@@ -10,6 +10,7 @@ function conditionHolds(state, when = {}) {
   if (when.minMonth && state.time.month < when.minMonth) return false;
   if (when.csBelow !== undefined && state.meters.cs >= when.csBelow) return false;
   if (when.minStaff && totalStaff(state) < when.minStaff) return false;
+  if (when.hasBuilding && !state.sectors.some((s) => s.owned && s.buildings.some((b) => b.type === when.hasBuilding && b.status === 'active' && !b.broken))) return false;
   return true;
 }
 
@@ -36,7 +37,7 @@ export function rollEventCard(state, rng) {
   return [{ type: 'event:card', payload: { id: pick } }];
 }
 
-export function applyEffects(state, fx) {
+export function applyEffects(state, fx, rng = null) {
   if (fx.cash) {
     state.company.cash += fx.cash;
     if (fx.cash < 0) state.company.otherCostsThisMonth -= fx.cash;
@@ -51,15 +52,29 @@ export function applyEffects(state, fx) {
   if (fx.wholesale) addMod(state, { kind: 'wholesale', mult: fx.wholesale.mult, months: fx.wholesale.months });
   if (fx.price) addMod(state, { kind: 'price', mult: fx.price.mult, months: fx.price.months });
   if (fx.supply) addMod(state, { kind: 'supply', share: fx.supply.share, months: fx.supply.months });
+  // Version 1.2
+  if (fx.peak) addMod(state, { kind: 'peak', mult: fx.peak.mult, months: fx.peak.months });
+  if (fx.strike) state.staff.strikeMonths = Math.max(state.staff.strikeMonths, fx.strike);
+  if (fx.staff) state.staff[fx.staff.role] = Math.max(0, state.staff[fx.staff.role] - fx.staff.count);
+  const pick = (list) => (list.length ? list[rng ? rng.int(0, list.length - 1) : 0] : null);
+  if (fx.breakBuilding) {
+    const b = pick(state.sectors.filter((s) => s.owned).flatMap((s) => s.buildings)
+      .filter((x) => x.type === fx.breakBuilding && x.status === 'active' && !x.broken));
+    if (b) b.broken = true;
+  }
+  if (fx.damage) {
+    const s = pick(state.sectors.filter((x) => x.owned));
+    if (s) s.damage = Math.min(100, s.damage + fx.damage);
+  }
 }
 
-export function chooseEvent(state, choice) {
+export function chooseEvent(state, choice, rng = null) {
   const p = state.events.pending;
   if (!p) return false;
   const card = EVENTS[p.id];
   const c = card.choices[choice];
   if (!c) return false;
-  applyEffects(state, c.effects);
+  applyEffects(state, c.effects, rng);
   state.events.pending = null;
   state.events.cooldown = EVENT_RULES.COOLDOWN;
   return true;

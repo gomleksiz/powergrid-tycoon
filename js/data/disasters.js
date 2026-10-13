@@ -1,23 +1,24 @@
 // Disasters (design section 13). Chances are for Normal; × difficulty disasterMult.
+// Version 1.2: damage × 1.25, and a hit can break buildings (BREAKDOWN in balance.js).
 // chance: by season. sectors: how many are hit. hazard: the sector-type key that raises the chance.
 // spread: 'neighbor' = + 1 neighbor; 'neighbors' = + all neighbors (half damage).
 
 export const DISASTERS = {
   windstorm: {
     chance: { spring: 0.08, summer: 0.02, fall: 0.08, winter: 0.02 },
-    sectors: [1, 3], damage: [20, 40], hazard: 'windstorm',
+    sectors: [1, 3], damage: [25, 50], hazard: 'windstorm',
   },
   ice: {
     chance: { spring: 0, summer: 0, fall: 0, winter: 0.04 },
-    sectors: [1, 2], damage: [15, 30],
+    sectors: [1, 2], damage: [20, 40],
   },
   flood: {
     chance: { spring: 0.01, summer: 0.06, fall: 0.01, winter: 0.01 },
-    sectors: [1, 1], damage: [25, 50], hazard: 'flood', spread: 'neighbor',
+    sectors: [1, 1], damage: [30, 60], hazard: 'flood', spread: 'neighbor',
   },
   earthquake: {
     chance: { spring: 0.01, summer: 0.01, fall: 0.01, winter: 0.01 },
-    fromMonth: 60, sectors: [1, 1], damage: [30, 60], hazard: 'earthquake', spread: 'neighbors',
+    fromMonth: 60, sectors: [1, 1], damage: [40, 75], hazard: 'earthquake', spread: 'neighbors',
     stopsFission: 2,       // months
   },
   heatwave: {
@@ -28,7 +29,7 @@ export const DISASTERS = {
 
 // The scripted "Storm of the Decade": always at month 110, week 1, warning 4 weeks before.
 export const SUPERSTORM = {
-  month: 110, week: 1, warningWeeks: 4, sectors: 4, damage: [50, 70],
+  month: 110, week: 1, warningWeeks: 4, sectors: 4, damage: [60, 80],
 };
 
 export const DISASTER = {

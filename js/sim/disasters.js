@@ -4,7 +4,7 @@
 import { DISASTERS, DISASTER_TYPES, SUPERSTORM, DISASTER } from '../data/disasters.js';
 import { SECTOR_TYPES } from '../data/sectors.js';
 import { NODES, NODE_IDS } from '../data/techTree.js';
-import { TIME } from '../data/balance.js';
+import { TIME, BREAKDOWN } from '../data/balance.js';
 import { diff } from '../data/difficulty.js';
 import { neighbors } from './mapgen.js';
 import { seasonOf } from './economy.js';
@@ -86,7 +86,7 @@ function savers(state, sector, type) {
     && NODES[id].effects.damageMult[type] < 1).map((id) => id);
 }
 
-function strike(state, item) {
+function strike(state, item, rng) {
   const def = DISASTERS[item.type] ?? DISASTERS.windstorm;
   const key = damageKey(item.type);
   const lines = [];
@@ -105,6 +105,7 @@ function strike(state, item) {
       savedBy: savers(state, s, key), prep: s.prep,
     });
     s.prep = false;
+    lines[lines.length - 1].broken = breakBuildings(s, actual, rng);
     if (def.stopsFission) for (const b of s.buildings) if (b.type === 'fission' && b.status === 'active') b.stopped = def.stopsFission;
   }
   if (def.heat) addMod(state, { kind: 'heat', months: 1 });
@@ -120,8 +121,22 @@ function strike(state, item) {
   return report;
 }
 
+// Version 1.2: a hit can break buildings. The chance grows with the damage
+// (tech and Storm Prep already lowered it). Returns the types that broke.
+export function breakBuildings(sector, damage, rng) {
+  const broken = [];
+  const chance = damage * BREAKDOWN.CHANCE_PER_POINT;
+  if (!rng || chance <= 0) return broken;
+  for (const b of sector.buildings) {
+    if (b.status !== 'active' || b.broken || !rng.chance(chance)) continue;
+    b.broken = true;
+    broken.push(b.type);
+  }
+  return broken;
+}
+
 // Each week: give warnings, then let the disasters of this week strike.
-export function disasterWeek(state) {
+export function disasterWeek(state, rng) {
   const events = [];
   state.disasters.active = state.disasters.active.filter((a) => --a.weeks >= 0);
   const now = nowIndex(state);
@@ -129,14 +144,16 @@ export function disasterWeek(state) {
   for (const item of state.disasters.scheduled) {
     const at = weekIndex(item.month, item.week);
     if (at <= now) {
-      const report = strike(state, item);
+      const report = strike(state, item, rng);
       events.push({ type: 'disaster:hit', payload: report });
       continue;
     }
     const ww = warningWeeks(state, item);
     if (!item.warned && ww > 0 && at - now <= ww) {
       item.warned = true;
-      events.push({ type: 'disaster:warning', payload: { id: item.id, type: item.type, weeks: at - now, sectors: item.hits.map((h) => h.sector) } });
+      // Version 1.2: Storm Prep is paid by itself (the player can turn this off).
+      const prepped = state.policy?.autoPrep ? item.hits.map((h) => h.sector).filter((id) => stormPrep(state, id)) : [];
+      events.push({ type: 'disaster:warning', payload: { id: item.id, type: item.type, weeks: at - now, sectors: item.hits.map((h) => h.sector), prepped } });
     }
     left.push(item);
   }

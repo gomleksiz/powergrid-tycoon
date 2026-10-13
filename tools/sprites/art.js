@@ -382,6 +382,14 @@ const icons = [
     r.rect(3, 3, 18, 18, P.ink).rect(4, 4, 16, 16, P.blue);
     r.line(8, 7, 12, 17, P.white).line(12, 17, 16, 7, P.white).line(9, 7, 13, 17, P.white);
   } },
+  { name: 'icon_nova', draw: (r) => {
+    r.rect(3, 3, 18, 18, P.ink).rect(4, 4, 16, 16, P.greenD);
+    r.line(8, 17, 8, 7, P.white).line(8, 7, 16, 17, P.white).line(16, 17, 16, 7, P.white).line(9, 17, 9, 7, P.white);
+  } },
+  { name: 'icon_broken', draw: (r) => {
+    r.disc(12, 12, 8, P.ink); r.disc(12, 12, 7, P.red);
+    r.line(8, 8, 16, 16, P.white).line(16, 8, 8, 16, P.white).line(9, 8, 16, 15, P.white).line(15, 8, 8, 15, P.white);
+  } },
   { name: 'icon_star', draw: (r) => {
     r.disc(12, 12, 9, P.ink); r.disc(12, 12, 8, P.yellow);
     r.rect(11, 6, 2, 12, P.yellowD).rect(6, 11, 12, 2, P.yellowD);

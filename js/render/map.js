@@ -36,7 +36,7 @@ const HOUSE_SPRITES = {
   hills: ['cabin', 'house_a', 'cabin'],
   fault: ['house_b', 'office', 'house_c'],
 };
-const MIN_HOUSE_SHARE = 0.25;   // a sector always shows some houses
+const MIN_HOUSE_SHARE = 0.6;    // the region is full of homes; most plots always show a house (version 1.2)
 const FRAME_MS = { water: 700, wind: 140, fusion: 500 };
 const MAX_FIGURES = 4;              // crew figures drawn in one sector
 const TECHS_PER_FIGURE = 2;
@@ -130,6 +130,7 @@ export function createMapRenderer(canvas, camera) {
           ctx.globalAlpha = 1;
         }
         drawLevel(b);
+        if (b.broken) drawSprite(ctx, 'icon_broken', b.x * T, b.y * T);   // version 1.2
       }
     }
   }
@@ -204,21 +205,6 @@ export function createMapRenderer(canvas, camera) {
     ctx.strokeRect(b.x * T + 1, b.y * T + 1, b.w * T - 2, b.h * T - 2);
   }
 
-  function drawGhost(ui, now) {
-    if (!ui.placing || !ui.ghost) return;
-    const size = BUILDINGS[ui.placing].size;
-    const { x, y, ok } = ui.ghost;
-    ctx.globalAlpha = 0.7 + 0.15 * Math.sin(now / 200);
-    drawSprite(ctx, ui.placing, x * T, y * T);
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = ok ? 'rgba(58, 209, 160, 0.35)' : 'rgba(255, 93, 108, 0.45)';
-    ctx.fillRect(x * T, y * T, size * T, size * T);
-    ctx.strokeStyle = ok ? '#3ad1a0' : '#ff5d6c';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(x * T + 0.5, y * T + 0.5, size * T - 1, size * T - 1);
-    drawSprite(ctx, ok ? 'icon_ok' : 'icon_bad', (x + size) * T - 14, y * T - 10);
-  }
-
   // Readable text (not pixel art), drawn in screen space.
   function drawLabels(state, ui) {
     const dpr = window.devicePixelRatio || 1;
@@ -272,7 +258,6 @@ export function createMapRenderer(canvas, camera) {
     drawWeather(ctx, state, now, { motion: !reducedMotion() });
     drawViewIcons(ctx, state, ui, now);
     drawSelection(ui);
-    drawGhost(ui, now);
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     drawLabels(state, ui);

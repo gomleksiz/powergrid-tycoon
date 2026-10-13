@@ -95,8 +95,15 @@ export function upkeep(state) {
   return ownedSectors(state).length * MONEY.UPKEEP_SECTOR + levels * MONEY.UPKEEP_BUILDING;
 }
 
+// Version 1.2: serving customers costs money (billing, meters, the call center).
+export function serviceCost(state) {
+  let c = 0;
+  for (const s of ownedSectors(state)) for (const t of TIER_IDS) c += s.customers[t] * TIERS[t].serviceCost;
+  return c;
+}
+
 // Money out each month without energy and tax (for the Advisor, the manager and bots).
-export const monthlyCosts = (state) => wages(state) + upkeep(state) + interest(state) + budgetDollars(state).total;
+export const monthlyCosts = (state) => wages(state) + upkeep(state) + serviceCost(state) + interest(state) + budgetDollars(state).total;
 
 export function demandKwh(state) {
   let kwh = 0;
@@ -145,11 +152,12 @@ export function monthlyMoney(state, ctx = {}) {
     govPrice: govPrice(state),
     wages: wages(state),
     upkeep: upkeep(state),
+    service: serviceCost(state),
     budget: budgetDollars(state).total,
     interest: interest(state),
     penalties: ctx.penalties ?? 0,
   };
-  out.preTax = out.revenue + out.sales - out.energy - out.wages - out.upkeep - out.budget - out.interest - out.penalties;
+  out.preTax = out.revenue + out.sales - out.energy - out.wages - out.upkeep - out.service - out.budget - out.interest - out.penalties;
   const tax = Math.max(0, out.preTax) * MONEY.TAX_RATE;
   out.tax = Math.max(0, tax - (ctx.capexCredit ?? 0));
   out.net = out.preTax - out.tax;
@@ -158,34 +166,50 @@ export function monthlyMoney(state, ctx = {}) {
 
 // ---------- Loans ----------
 
-export const loanLimit = (state) => diff(state).loanLimit;
+// Round down to 1, 2 or 5 × 10ⁿ.
+export function niceDown(v) {
+  if (!(v > 0)) return 0;
+  const p = 10 ** Math.floor(Math.log10(v));
+  return [5, 2, 1].map((k) => k * p).find((x) => x <= v);
+}
+
+// Version 1.2: a bigger company can borrow more (2 months of revenue), in bigger steps.
+export const loanLimit = (state) => Math.max(diff(state).loanLimit, niceDown((state.company.lastRevenue || 0) * MONEY.LOAN_REVENUE_MONTHS));
+export const loanStep = (state) => Math.max(MONEY.LOAN_STEP, niceDown(loanLimit(state) / MONEY.LOAN_STEPS));
+// A repayment is 1 step, or what is left of the debt.
+export const repayStep = (state) => Math.min(state.company.debt, loanStep(state));
 
 export function canTakeLoan(state) {
-  return state.company.debt + MONEY.LOAN_STEP <= loanLimit(state);
+  return state.company.debt + loanStep(state) <= loanLimit(state);
 }
 
 export function canRepay(state) {
-  return state.company.debt >= MONEY.LOAN_STEP && state.company.cash >= MONEY.LOAN_STEP;
+  return state.company.debt > 0 && state.company.cash >= repayStep(state);
 }
 
 export function takeLoan(state) {
-  if (!canTakeLoan(state)) return false;
-  state.company.debt += MONEY.LOAN_STEP;
-  state.company.cash += MONEY.LOAN_STEP;
-  return true;
+  if (!canTakeLoan(state)) return 0;
+  const step = loanStep(state);
+  state.company.debt += step;
+  state.company.cash += step;
+  return step;
 }
 
 export function repayLoan(state) {
   if (!canRepay(state)) return false;
-  state.company.debt -= MONEY.LOAN_STEP;
-  state.company.cash -= MONEY.LOAN_STEP;
+  const step = repayStep(state);
+  state.company.debt -= step;
+  state.company.cash -= step;
   return true;
 }
 
-// When cash < 0, borrow in $50,000 steps while the limit allows. Returns the amount.
+// When cash < 0, borrow step by step while the limit allows. Returns the amount.
 export function emergencyLoan(state) {
   let taken = 0;
-  while (state.company.cash < 0 && takeLoan(state)) taken += MONEY.LOAN_STEP;
+  for (let step = 1; state.company.cash < 0 && step > 0;) {
+    step = takeLoan(state);
+    taken += step;
+  }
   return taken;
 }
 

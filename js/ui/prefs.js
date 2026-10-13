@@ -5,6 +5,7 @@ import { emit } from '../core/bus.js';
 
 export const DEFAULT_PREFS = {
   pauseOnProject: false,   // version 1.1: the game runs on when a project is done
+  mainView: 'board',       // version 1.2: 'board' (live board) or 'map'
   reportMode: 'popup',     // popup | log
   font: 'atkinson',        // atkinson | lexend | system
   textSize: 100,           // 90–150 %

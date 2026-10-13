@@ -30,7 +30,8 @@ export function createRivalsPanel() {
     const cost = buyoutCost(s, sec);
     return h('div', { class: 'proj' },
       h('div', { class: 'proj-head' }, h('strong', {}, T.rivalIn(T.rivalNames[rv.id], sec.name)),
-        h('span', { class: `tag ${rv.id}` }, rv.id === 'apex' ? 'A' : 'V')),
+        h('span', { class: `tag ${rv.id}` }, T.rivalLetters[rv.id])),
+      rv.drive > 0 ? h('p', { class: 'small warn' }, T.rivalDriveLine(rv.drive)) : null,
       h('div', { class: 'meter-row' }, h('span', {}, T.rivalStrength),
         h('span', { class: 'bar' }, h('span', { class: 'fill bad', style: `width:${Math.max(0, Math.min(100, rv.strength))}%` })),
         h('span', { class: 'num' }, Math.round(rv.strength))),
@@ -45,11 +46,12 @@ export function createRivalsPanel() {
 
   function update(s) {
     const present = s.sectors.filter((x) => x.rival);
-    const key = present.map((x) => `${x.id}:${x.rival.id}:${Math.round(x.rival.strength)}:${sum(x.rival.customers)}:${canBuyout(s, x.id)}`).join('|')
+    const key = present.map((x) => `${x.id}:${x.rival.id}:${Math.round(x.rival.strength)}:${sum(x.rival.customers)}:${canBuyout(s, x.id)}:${x.rival.drive ?? 0}`).join('|')
       + `|${s.meters.gs.toFixed(0)}`;
     fillKeyed(list, key || 'none', () => (present.length ? present.map((x) => rivalItem(s, x))
       : [h('p', { class: 'small' }, T.rivalsNone),
-        ...RIVAL_IDS.map((id) => h('p', { class: 'dim small' }, T.rivalsComing(T.rivalNames[id], dateLabel(enterMonth(s, id)))))]));
+        ...RIVAL_IDS.filter((id) => enterMonth(s, id) !== null)
+          .map((id) => h('p', { class: 'dim small' }, T.rivalsComing(T.rivalNames[id], dateLabel(enterMonth(s, id)))))]));
 
     const owned = s.sectors.filter((x) => x.owned);
     fillKeyed(cuts, owned.map((x) => `${x.id}:${x.discount}`).join('|'), () => owned.map((sec) => h('div', { class: 'cut-row' },

@@ -10,7 +10,7 @@ export default makePlayer({
     'O3', 'O4', 'S2', 'D5', 'S3', 'G4', 'O5', 'D6', 'O6', 'D8', 'G5'],
   deploy: ['D2', 'D3', 'P6', 'D7', 'D4', 'P5', 'S3', 'D5', 'D6', 'D8'],
   fight: { buyout: true, cut: 0.1 },
-  campaign: { from: 150, cut: 0.1, months: 12, margin: 0.005 },
+  campaign: { from: 120, cut: 0.1, months: 12, margin: 0.01 },   // version 1.2: from 150 → 120 (rivals are stronger)
   // Own clean power lowers the energy bill and raises CS (so more customers stay).
   builds(m) {
     for (const sec of L.owned()) {

@@ -46,7 +46,7 @@ export const OUTAGE_HELP = {
   CAPACITY_WARN: 0.9,        // tip "capacity" when the peak is over 90 % of the capacity
   WAGE_STEP: 0.1,
   PLANTS: ['battery', 'storage', 'wind', 'fission', 'fusion'],  // own peak power, the first one you can build
-  MAX_TIPS: 4,
+  MAX_TIPS: 5,
 };
 
 // "Apply suggested budget" for each victory path.

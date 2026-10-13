@@ -379,7 +379,8 @@ test('a campaign brings more customers and ends after its months; 50% costs GS',
 test('cheaper than the rival: its customers switch to you, and it starts a price war', () => {
   const s = game();
   const h = home(s);
-  h.rival = { id: 'apex', strength: 50, customers: { ...emptyTiers(), low: 1000 }, lowMonths: 0, H: 15 };
+  h.rival = { id: 'apex', strength: 50, customers: { ...emptyTiers(), low: 1000 }, lowMonths: 0, H: 15, drive: 1 };   // no sales drive now
+  h.customers.low = sectorPotential(h).low - 1000;   // no free homes: the rival grows only from your customers
   s.prices.low = 0.6;                          // Apex: 0.8
   near(winBackCount(1000, 0.8, 0.6), 1000 * RIVAL.WIN_RATE * 0.2);
   const before = h.customers.low;

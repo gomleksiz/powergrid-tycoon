@@ -2,7 +2,7 @@
 
 import { BUILDINGS, LEVELS, levelOf } from '../data/buildings.js';
 import { METERS } from '../data/balance.js';
-import { mapgen, sectorAt, canPlace } from './mapgen.js';
+import { mapgen, sectorAt, canPlace, findFreeSpot } from './mapgen.js';
 import { globalEffects } from './effects.js';
 import { spendCapex, capexCost } from './economy.js';
 import { addBuildProject, addUpgradeProject } from './deployment.js';
@@ -47,6 +47,29 @@ export function placeBuilding(state, type, x, y) {
   return [{ type: 'build:placed', payload: { type, sector: check.sector.id } }];
 }
 
+// ---------- build from the panel (version 1.2): the game picks the tile ----------
+
+export function freeSpot(state, type, sectorId) {
+  const sector = state.sectors[sectorId];
+  if (!sector?.owned || !BUILDINGS[type]) return null;
+  return findFreeSpot(mapgen(state.seed), state.sectors.flatMap((s) => s.buildings), sectorId, BUILDINGS[type].size);
+}
+
+// → { ok, reason } like buildAllowed, plus 'notOwned' and 'full' (no free tiles left).
+export function canBuildIn(state, type, sectorId) {
+  const allowed = buildAllowed(state, type);
+  if (!allowed.ok) return allowed;
+  if (!state.sectors[sectorId]?.owned) return { ok: false, reason: 'notOwned' };
+  return freeSpot(state, type, sectorId) ? { ok: true } : { ok: false, reason: 'full' };
+}
+
+export function buildInSector(state, type, sectorId) {
+  const check = canBuildIn(state, type, sectorId);
+  if (!check.ok) return [{ type: 'news', payload: { key: 'buildFailed', reason: check.reason, kind: 'warn' } }];
+  const spot = freeSpot(state, type, sectorId);
+  return placeBuilding(state, type, spot.x, spot.y);
+}
+
 // ---------- upgrades (version 1.1) ----------
 
 export function findBuilding(state, id) {
@@ -68,7 +91,7 @@ export function canUpgrade(state, id) {
   const { b } = found;
   const def = BUILDINGS[b.type];
   if (levelOf(b) >= LEVELS.MAX) return { ok: false, reason: 'max' };
-  if (b.status !== 'active' || b.upgrading) return { ok: false, reason: 'busy' };
+  if (b.status !== 'active' || b.upgrading || b.broken) return { ok: false, reason: 'busy' };
   if (def.permitGs && (state.meters.gs < def.permitGs || state.meters.gs < METERS.LOW)) return { ok: false, reason: 'permit', gs: def.permitGs };
   if (state.company.cash < upgradeCost(state, b)) return { ok: false, reason: 'cash' };
   return { ok: true };

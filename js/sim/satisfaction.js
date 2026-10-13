@@ -137,7 +137,10 @@ export function updateMeters(state, rng) {
   if (state.govt.auditCooldown > 0) state.govt.auditCooldown -= 1;
   let fine = 0;
   if (state.meters.gs < METERS.LOW && state.govt.auditCooldown === 0) {
-    fine = rng.int(SAT.AUDIT_FINE[0] / SAT.AUDIT_STEP, SAT.AUDIT_FINE[1] / SAT.AUDIT_STEP) * SAT.AUDIT_STEP;
+    // Version 1.2: the fine fits the company size, so a small company is not wiped out.
+    const [lo, hi] = SAT.AUDIT_REVENUE;
+    const raw = (state.company.lastRevenue || 0) * (lo + rng.next() * (hi - lo));
+    fine = Math.round(Math.min(SAT.AUDIT_FINE[1], Math.max(SAT.AUDIT_FINE[0], raw)) / SAT.AUDIT_STEP) * SAT.AUDIT_STEP;
     state.govt.auditCooldown = SAT.AUDIT_EVERY;
     events.push({ type: 'news', payload: { key: 'audit', amount: fine, kind: 'error' } });
   }

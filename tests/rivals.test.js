@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createState, setState, getState, dispatch } from '../js/core/store.js';
 import { on } from '../js/core/bus.js';
-import { entryScore, unservedShare, buyoutCost, moveCount, enterMonth, rivalsMonth, rivalRevenue } from '../js/sim/rivals.js';
+import { entryScore, unservedShare, buyoutCost, moveCount, enterMonth, rivalsMonth, rivalRevenue, rivalPrice } from '../js/sim/rivals.js';
 import { emptyTiers, potentialTotal } from '../js/sim/setup.js';
 import { createRng } from '../js/core/rng.js';
 import { serialize, readSave } from '../js/save/save.js';
@@ -16,35 +16,51 @@ function rich(seed, difficulty = 'normal') {
   return s;
 }
 
-test('entry score = 50 × unserved + 2 × max(0, H − 12) + 30 × (m̄ − 1) + 20 × [CS < 30]', () => {
+test('entry score = 50 × unserved + 2 × max(0, H − 12) + 30 × (m̄ − 1) + 20 × [CS < 30] + 15 × [your sector]', () => {
   const s = createState(1);
-  const h = home(s);                       // 2,000 customers in Home Valley
-  const free = (potentialTotal(h) - 2000) / potentialTotal(h);
+  const h = home(s);                       // 2,500 customers in Home Valley
+  const free = (potentialTotal(h) - 2500) / potentialTotal(h);
   near(unservedShare(h), free);
   h.lastH = 0;
-  near(entryScore(s, h), 50 * free);
+  near(entryScore(s, h), 50 * free + 15);
   h.lastH = 30;
   s.prices.low = 1.2;
   s.meters.cs = 20;
-  near(entryScore(s, h), 50 * free + 2 * 18 + 30 * 0.2 + 20);
+  near(entryScore(s, h), 50 * free + 15 + 2 * 18 + 30 * 0.2 + 20);
   const other = s.sectors.find((x) => !x.owned);
   s.prices.low = 1;
   s.meters.cs = 60;
   near(entryScore(s, other), 50);
 });
 
-test('buyout cost at GS 0, 50 and 100', () => {
+test('buyout cost at GS 0, 50 and 100 (version 1.2: 36 months, at least $150,000)', () => {
   const s = createState(2);
   const h = home(s);
-  h.rival = { id: 'apex', strength: 40, customers: { ...emptyTiers(), low: 100 }, lowMonths: 0, H: 15 };
-  const rev = 100 * 50 * 0.8;
+  h.rival = { id: 'apex', strength: 40, customers: { ...emptyTiers(), low: 1000 }, lowMonths: 0, H: 15 };
+  const rev = 1000 * 50 * 0.8;
   near(rivalRevenue(h), rev);
   s.meters.gs = 0;
-  near(buyoutCost(s, h), rev * 24 * 1.5);
+  near(buyoutCost(s, h), rev * 36 * 1.5);
   s.meters.gs = 50;
-  near(buyoutCost(s, h), rev * 24 * 1.0);
+  near(buyoutCost(s, h), rev * 36 * 1.0);
   s.meters.gs = 100;
-  near(buyoutCost(s, h), rev * 24 * 0.5);
+  near(buyoutCost(s, h), rev * 36 * 0.5);
+  h.rival.customers.low = 10;                    // a tiny rival still costs the minimum
+  near(buyoutCost(s, h), 150_000 * 0.5);
+});
+
+test('after a buyout no rival can enter that sector for 24 months', () => {
+  setState(rich(2));
+  const s = getState();
+  const h = home(s);
+  h.rival = { id: 'apex', strength: 40, customers: { ...emptyTiers(), low: 100 }, lowMonths: 0, H: 15 };
+  dispatch({ type: 'rival/buyout', payload: { sector: h.id } });
+  assert.equal(h.rival, null);
+  assert.equal(h.noRivalUntil, s.time.month + 24);
+  for (const x of s.sectors) if (x !== h) x.rival = { id: 'volt', strength: 1, customers: emptyTiers(), lowMonths: 0, H: 0, drive: 1 };
+  s.time.month = 1;                              // an Apex entry check month
+  const ev = rivalsMonth(s, createRng(1));
+  assert.ok(!ev.some((e) => e.type === 'rival:enter'));
 });
 
 test('customers that move to the rival (section 12)', () => {
@@ -53,19 +69,29 @@ test('customers that move to the rival (section 12)', () => {
   near(moveCount(1000, 50, 0, 48, 0.6, 1.1), 1000 * 0.5 * 0.03 * 1 * 0.5);
 });
 
-test('on Normal, Apex enters a sector at month 55 (Hard 40, Easy 80; Volt 65 months later)', () => {
-  assert.equal(enterMonth(createState(1, 'normal'), 'apex'), 55);
-  assert.equal(enterMonth(createState(1, 'hard'), 'apex'), 40);
-  assert.equal(enterMonth(createState(1, 'easy'), 'apex'), 80);
-  assert.equal(enterMonth(createState(1, 'normal'), 'volt'), 120);
+test('rival start months come from the difficulty (version 1.2); Apex attacks Home Valley in month 1 on Normal', () => {
+  assert.equal(enterMonth(createState(1, 'normal'), 'apex'), 1);
+  assert.equal(enterMonth(createState(1, 'normal'), 'volt'), 30);
+  assert.equal(enterMonth(createState(1, 'normal'), 'nova'), 80);
+  assert.equal(enterMonth(createState(1, 'hard'), 'apex'), 1);
+  assert.equal(enterMonth(createState(1, 'hard'), 'volt'), 1);
+  assert.equal(enterMonth(createState(1, 'easy'), 'apex'), 18);
   setState(rich(3));
   const s = getState();
   const entries = [];
-  const off = on('rival:enter', (e) => entries.push([e.rival, s.time.month - 1]));
-  const offC = on('event:card', () => dispatch({ type: 'event/choose', payload: { choice: 0 } }));
-  while (s.time.month <= 56) dispatch({ type: 'time/week' });
-  off(); offC();
-  assert.deepEqual(entries[0], ['apex', 55]);
+  const off = on('rival:enter', (e) => entries.push([e.rival, s.time.month - 1, e.sector]));
+  while (s.time.month <= 2) dispatch({ type: 'time/week' });
+  off();
+  assert.deepEqual(entries[0], ['apex', 1, home(s).id]);
+});
+
+test('each rival is in at most rivalMaxSectors sectors', () => {
+  const s = createState(3);
+  s.time.month = 4;                                // an Apex check month (1 + 3)
+  const others = s.sectors.filter((x) => !x.owned).slice(0, 3);
+  for (const x of others) x.rival = { id: 'apex', strength: 30, customers: emptyTiers(), lowMonths: 0, H: 0, drive: 1 };
+  const ev = rivalsMonth(s, createRng(1));
+  assert.ok(!ev.some((e) => e.type === 'rival:enter' && e.payload.rival === 'apex'));
 });
 
 test('Apex picks a weak owned sector over a strong one', () => {
@@ -92,25 +118,37 @@ test('strength + 3 a month, + 5 when the player is over a tier limit', () => {
   assert.equal(h.rival.strength, 28);
 });
 
-test('being better (fewer outage hours than the rival) stops the growth', () => {
+test('being better (fewer outage hours than the rival) halves the growth (version 1.2)', () => {
   const s = createState(6);
   const h = home(s);
-  h.rival = { id: 'apex', strength: 20, customers: emptyTiers(), lowMonths: 0, H: 0 };
+  h.rival = { id: 'apex', strength: 20, customers: emptyTiers(), lowMonths: 0, H: 0, drive: 1 };   // drive 1: no new sales drive this month
   h.lastH = 1;                                   // Apex has 12–24 h
   rivalsMonth(s, createRng(3));
-  assert.equal(h.rival.strength, 20);
+  assert.equal(h.rival.strength, 21.5);
 });
 
-test('local price cut: strength − 4 per 10 %; at 30 %: GS − 2 each month', () => {
+test('sales drive: price × 0.85 and + 10 strength for 6 months (version 1.2)', () => {
+  const s = createState(6);
+  const h = home(s);
+  h.rival = { id: 'apex', strength: 20, customers: emptyTiers(), lowMonths: 0, H: 0, drive: 0, price: 0.8 };
+  h.lastH = 1;
+  let ev = [];
+  for (let seed = 1; seed < 500 && !h.rival.drive; seed++) ev = rivalsMonth(s, createRng(seed));
+  assert.equal(h.rival.drive, 6);
+  assert.ok(ev.some((e) => e.payload?.key === 'rivalDrive'));
+  near(rivalPrice(h.rival), 0.8 * 0.85);
+});
+
+test('local price cut: strength − 3 per 10 %; at 30 %: GS − 2 each month', () => {
   setState(rich(7));
   const s = getState();
   const h = home(s);
-  h.rival = { id: 'apex', strength: 40, customers: emptyTiers(), lowMonths: 0, H: 0 };
+  h.rival = { id: 'apex', strength: 40, customers: emptyTiers(), lowMonths: 0, H: 0, drive: 1 };
   h.lastH = 1;
   dispatch({ type: 'sector/discount', payload: { sector: h.id, discount: 0.3 } });
   const gs = s.meters.gs;
   rivalsMonth(s, createRng(4));
-  assert.equal(h.rival.strength, 28);
+  assert.equal(h.rival.strength, 40 + 1.5 - 9);
   assert.equal(s.meters.gs, gs - 2);
 });
 
@@ -119,6 +157,7 @@ test('the rival leaves after 6 months under 5 %', () => {
   const h = home(s);
   h.rival = { id: 'volt', strength: 1, customers: emptyTiers(), lowMonths: 5, H: 0 };
   h.lastH = 0;
+  s.time.month = 2;                              // not an entry check month, so Apex does not come in at once
   const ev = rivalsMonth(s, createRng(5));
   assert.equal(h.rival, null);
   assert.ok(ev.some((e) => e.type === 'rival:leave'));

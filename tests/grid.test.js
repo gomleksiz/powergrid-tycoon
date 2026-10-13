@@ -10,8 +10,8 @@ const home = (s) => s.sectors.find((x) => x.owned);
 test('capacity from substations, peak from customers', () => {
   const s = createState(1, 'normal');
   const h = home(s);
-  assert.equal(capacityMw(h), 10);
-  near(peakMw(s, h), 2000 * 1.2 / 1000);
+  assert.equal(capacityMw(h), 5);                 // version 1.2: 1 substation
+  near(peakMw(s, h), 2500 * 1.5 / 1000);          // version 1.2: 2,500 customers, 1.5 kW each
 });
 
 test('H wear = (100 − Health) ÷ 100 × 20 × f line', () => {
@@ -30,7 +30,7 @@ test('H overload = 120 × (Peak − Capacity) ÷ Peak', () => {
   const h = home(s);
   h.health = 100;
   h.buildings = [h.buildings[0]];       // 5 MW
-  h.customers.low = 6250;               // 7.5 MW peak
+  h.customers.low = 5000;               // 7.5 MW peak (1.5 kW each)
   near(outageParts(s, h).overload, 120 * (7.5 - 5) / 7.5);
 });
 

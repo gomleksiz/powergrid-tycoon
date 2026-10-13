@@ -44,10 +44,10 @@ test('roads cross every sector', () => {
   }
 });
 
-test('the start sector has 2 substations on free tiles', () => {
+test('the start sector has 1 substation on a free tile (version 1.2)', () => {
   const s = createState(9, 'normal');
   const home = s.sectors.find((x) => x.owned);
-  assert.equal(home.buildings.length, 2);
+  assert.equal(home.buildings.length, 1);
   for (const b of home.buildings) assert.equal(b.type, 'substation');
 });
 
@@ -64,14 +64,14 @@ test('place a building: size, free tiles, owned sector, cost', () => {
   }
   const cash = s.company.cash;
   dispatch({ type: 'build/place', payload: { type: 'substation', ...spot } });
-  assert.equal(home.buildings.length, 3);
+  assert.equal(home.buildings.length, 2);
   assert.equal(s.company.cash, cash - 40_000);
   // the same tile again is refused
   dispatch({ type: 'build/place', payload: { type: 'substation', ...spot } });
-  assert.equal(home.buildings.length, 3);
+  assert.equal(home.buildings.length, 2);
   // a locked building is refused
   dispatch({ type: 'build/place', payload: { type: 'solar', x: spot.x + 1, y: spot.y } });
-  assert.equal(home.buildings.length, 3);
+  assert.equal(home.buildings.length, 2);
   // a sector that is not owned is refused
   const other = s.sectors.find((x) => !x.owned);
   const ob = { x: (other.id % 4) * 12 + 1, y: Math.floor(other.id / 4) * 10 + 1 };

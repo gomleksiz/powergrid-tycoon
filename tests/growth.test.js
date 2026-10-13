@@ -117,7 +117,7 @@ test('prosumers: PROSUMER_RATE × F marketing join each month where the program 
   h.tech.P5 = 'ACTIVE';
   const g = globalEffects(s);
   const n = updateProsumers(s, createRng(3), 4_000, g);
-  const expected = 2000 * CUSTOMERS.PROSUMER_RATE * 0.77;   // 1 sector, $4,000 marketing, 1 PR
+  const expected = 2500 * CUSTOMERS.PROSUMER_RATE * 0.77;   // 1 sector, $4,000 marketing, 1 PR
   assert.ok(Math.abs(n - expected) <= 1, `${n} vs ${expected}`);
   assert.equal(h.prosumers, n);
   h.customers.low = 10;
@@ -129,7 +129,7 @@ test('market share = customers ÷ all possible customers in 12 sectors', () => {
   const s = createState(7);
   const all = s.sectors.reduce((n, x) => n + potentialTotal(x), 0);
   assert.equal(totalPotential(s), all);
-  assert.equal(marketShare(s), 2000 / all);
+  assert.equal(marketShare(s), 2500 / all);
   assert.ok(all > 30_000, 'section 18 asks for more than 30,000 customers at month 180');
 });
 
@@ -140,6 +140,7 @@ test('Medium, High and Corporate tiers open with their techs', () => {
   s.company.cash = 1e7;
   const sub = s.sectors.find((x) => x.type === 'suburb');
   sub.owned = true;
+  sub.buildings.push({ id: 999, type: 'substation', x: 0, y: 0, status: 'active' });   // room to connect (version 1.2)
   for (let i = 0; i < 8; i++) dispatch({ type: 'time/week' });
   assert.equal(sub.customers.medium, 0);
   dispatch({ type: 'debug/unlock', payload: { node: 'P2' } });

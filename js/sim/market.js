@@ -20,6 +20,7 @@ export function refreshMarket(state) {
     if (mod.kind === 'wholesale') m.eventMult *= mod.mult;
     if (mod.kind === 'price') m.priceMult *= mod.mult;
     if (mod.kind === 'supply') m.supplyShare = Math.min(m.supplyShare, mod.share);
+    if (mod.kind === 'peak') m.peakMult *= mod.mult;   // version 1.2: heat dome card
     if (mod.kind === 'heat') {
       m.peakMult *= GRID.HEATWAVE_PEAK;
       m.supplyShare = Math.min(m.supplyShare, GRID.HEATWAVE_SUPPLY);

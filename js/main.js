@@ -16,6 +16,7 @@ import { openPauseMenu } from './ui/pauseMenu.js';
 import { openSettings } from './ui/settings.js';
 import { openCredits } from './ui/credits.js';
 import { mountMapView } from './ui/mapView.js';
+import { mountBoard } from './ui/board.js';
 import { setUi } from './ui/uiState.js';
 import { bindDebug } from './ui/debug.js';
 import { mountReport } from './ui/report.js';
@@ -58,7 +59,6 @@ document.addEventListener('click', (e) => { if (e.target.closest('.btn, .tab, .m
 let pauseMenu = null;
 function openMenu() {
   if (pauseMenu?.el.open) return; // the 'close' event comes late, so check .open
-  if (map.isPlacing()) { map.cancelPlacing(); return; } // Esc first stops building
   panel.close();
   pauseMenu = openPauseMenu({
     loop,
@@ -82,7 +82,7 @@ const panel = mountSidepanel({
   scrim: $('scrim'),
   bottombar: $('bottombar'),
   panels: [
-    createSectorPanel({ onBuild: startBuild }),
+    createSectorPanel(),
     createBudgetPanel(),
     createResearchPanel({ onOpenTree: () => openTechTree() }),
     createProjectsPanel(),
@@ -97,14 +97,12 @@ function showTab(id) {
   panel.show(id);
   if (narrow()) panel.open(id);
 }
-// The map must be visible to place a building, so the drawer closes on small screens.
-function startBuild(type) {
-  if (narrow()) panel.close();
-  map.startPlacing(type);
-}
 
 // ---------- map and overlays ----------
 const map = mountMapView($('map-area'), $('map'), { onSelectSector: () => showTab('sector') });
+// Version 1.2: the live board shows the whole company; the top bar switches between the board and the map.
+const board = mountBoard($('map-area'), { onSelectSector: () => showTab('sector'), onMode: (m) => setPrefs({ mainView: m }) });
+const setMode = (m) => { board.setMode(m); setPrefs({ mainView: m }); };
 mountReport($('map-area'), { isEnabled: () => getPrefs().reportMode === 'popup' });
 const phaseBanner = mountPhaseBanner($('map-area'));
 mountLossBanners($('map-area'));
@@ -124,9 +122,11 @@ bindReactions({ loop, endScreen });
 // ---------- top bar and keys ----------
 const toggleMute = () => setPrefs({ mute: !getPrefs().mute });
 mountTopbar($('topbar'), { loop, onMenu: openMenu, onTogglePanel: () => panel.toggle(), onMute: toggleMute });
+$('topbar').querySelector('.company').after(board.switchEl);
 bindKeys({
   loop, isPlaying: isActive, onMenu: openMenu, onTab: showTab,
   onTree: () => openTechTree(), onNews: () => newsBar.openLog(), onMute: toggleMute,
+  onBoard: () => setMode(board.el.hidden ? 'board' : 'map'),
 });
 bindDebug(loop);
 
@@ -143,8 +143,9 @@ on('game:start', () => {
   title.hide();
   app.hidden = false;
   document.activeElement?.blur(); // focus must not stay in the hidden title screen
-  setUi({ selected: null, placing: null, ghost: null, view: 'normal' });
+  setUi({ selected: null, view: 'normal' });
   map.start();
+  board.setMode(getPrefs().mainView === 'map' ? 'map' : 'board');
   panel.show('sector');
   endScreen.hide();
   const s = getState();

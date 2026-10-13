@@ -2,6 +2,16 @@
 // growth, buildings, storms and rivals. The 6 active bots are configs of this player.
 
 import * as L from './lib.js';
+import { EVENTS } from '../../js/data/events.js';
+
+// Version 1.2: take the first choice, but not a payment the company cannot afford.
+const PLAN_MONTH = 41;
+
+const sensibleEvent = (id) => {
+  if (id === 'fuelCrisis' && !L.canSpend(0, 4)) return 1;   // raise prices when cash is short
+  const cost = -(EVENTS[id].choices[0].effects.cash ?? 0);
+  return cost > 0 && !L.canSpend(cost, 3) ? 1 : 0;
+};
 
 export function makePlayer(cfg) {
   const c = {
@@ -19,27 +29,30 @@ export function makePlayer(cfg) {
     builds: () => {},
     path: null,
     power: true,           // version 1.1: own peak power for the regional shortage
-    event: () => 0,
+    event: sensibleEvent,
     ...cfg,
   };
 
   return {
     name: c.name,
     setup() {
-      L.setBudget(c.budgetPct, c.split);
-      L.setPrices(c.price);
+      // Version 1.2: path bots keep the default budget and price in Phase 1 (money is tight),
+      // then switch to their plan when Phase 2 starts.
+      if (c.path) { L.setBudget(20, { marketing: 20, rd: 20, maintenance: 20, lobbying: 20, pr: 20 }); L.setPrices(1.0); }
+      else { L.setBudget(c.budgetPct, c.split); L.setPrices(c.price); }
       if (c.path) L.act('goals/target', c.path);
       L.act('staff/repairFirst', true);
     },
     month() {
       const s = L.S();
       const m = s.time.month;
+      if (c.path && m === PLAN_MONTH) { L.setBudget(c.budgetPct, c.split); L.setPrices(c.price); }
       L.manageLoans();
       L.staffPlan({ teams: c.teams(m), crews: c.crews(m, L.owned().length), pr: c.pr(m), backlogCrew: c.backlogCrew ?? true });
       L.research(L.nextOpen(c.research), { teams: 3 });
       L.deployAll(c.deploy);
       L.activateOneTime();
-      if (c.expand) L.expand();
+      if (c.expand) L.expand({ keepMonths: c.expandKeep ?? 1 });
       L.substations();
       c.builds(m);
       if (c.power) L.ownPower();
@@ -48,10 +61,11 @@ export function makePlayer(cfg) {
       if (c.campaign) L.campaign(c.campaign);
       if (c.rush) for (const p of s.projects) if (!p.rushed && p.status === 'active' && L.canSpend(50_000, 3)) L.act('project/rush', { id: p.id });
       L.repairPriority();
-      if (m % 12 === 0) L.setPrices(c.price);
+      if (m % 12 === 0 && (!c.path || m >= PLAN_MONTH)) L.setPrices(c.price);
     },
     week() {
       L.stormPrep();
+      if (c.emergencies !== false) L.emergencies();
     },
     event: c.event,
   };

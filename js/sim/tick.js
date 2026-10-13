@@ -5,8 +5,8 @@ import { TIME, TUTORIAL } from '../data/balance.js';
 import { monthlyMoney, budgetDollars, stepWalk, emergencyLoan, totalCustomers } from './economy.js';
 import { updateCustomers } from './customers.js';
 import { globalEffects } from './effects.js';
-import { calculateGrid, updateHealth, randomFailures, ownEnergy, averageOutage } from './grid.js';
-import { repairWeek } from './repair.js';
+import { calculateGrid, updateHealth, randomFailures, ownEnergy, averageOutage, ownPeakMw, capacityMw } from './grid.js';
+import { repairWeek, buildingRepairWeek } from './repair.js';
 import { researchWeek } from './research.js';
 import { deployWeek } from './deployment.js';
 import { staffArrive, monthStaff } from './staffing.js';
@@ -19,7 +19,7 @@ import { rollEventCard } from './eventCards.js';
 import { tickMods, updateRegion } from './market.js';
 import { campaignsMonth } from './marketing.js';
 import { managerWeek, watchWeek } from './offices.js';
-import { rivalsMonth } from './rivals.js';
+import { rivalsMonth, rivalShare } from './rivals.js';
 import { checkEnd } from './victory.js';
 import { DISASTER } from '../data/disasters.js';
 
@@ -27,7 +27,8 @@ export function weekTick(state, rng) {
   const events = [{ type: 'week:end', payload: { ...state.time } }];
   events.push(...staffArrive(state));
   managerWeek(state);
-  events.push(...disasterWeek(state));
+  events.push(...disasterWeek(state, rng));
+  events.push(...buildingRepairWeek(state));
   for (const id of researchWeek(state)) events.push({ type: 'project:done', payload: { kind: 'research', node: id } });
   for (const p of deployWeek(state)) events.push({ type: 'project:done', payload: { kind: p.kind, node: p.node, type: p.type, sector: p.sector } });
   repairWeek(state);
@@ -120,7 +121,7 @@ export function monthTick(state, rng) {
     region: { shortage: shortageThisMonth, soldKwh: money.soldKwh, sales: money.sales, govPrice: money.govPrice },
     meters: { before: meters.before, after: meters.after, reasons: meters.reasons },
   };
-  pushHistory(state, money);
+  pushHistory(state, money, grid, own);
 
   state.report.otherCosts = state.company.otherCostsThisMonth;
   state.report.capex = state.company.capexThisMonth;
@@ -135,8 +136,26 @@ export function monthTick(state, rng) {
   return events;
 }
 
-function pushHistory(state, money) {
+function pushHistory(state, money, grid, own) {
   const h = state.history;
+  // Version 1.2: power, costs and each sector, for the live board.
+  const owned = state.sectors.filter((s) => s.owned);
+  const push = (key, v) => (h[key] ??= []).push(v);
+  push('costs', Math.round(money.revenue + money.sales - money.net));
+  push('peak', +grid.totalPeak.toFixed(2));
+  push('ownPeak', +ownPeakMw(state).toFixed(2));
+  push('capacity', +owned.reduce((n, s) => n + capacityMw(s), 0).toFixed(2));
+  push('demandKwh', Math.round(money.demandKwh));
+  push('ownKwh', Math.round(own.kwh));
+  push('wholesale', +money.price.toFixed(4));
+  push('rivals', rivalShare(state));
+  for (const s of state.sectors) {
+    s.hist ??= { c: [], r: [], h: [] };
+    const sum = (o) => (o ? o.low + o.medium + o.high + o.corporate : 0);
+    s.hist.c.push(s.owned ? sum(s.customers) : 0);
+    s.hist.r.push(sum(s.rival?.customers));
+    s.hist.h.push(s.owned ? +s.lastH.toFixed(1) : 0);
+  }
   h.cash.push(Math.round(state.company.cash));
   h.customers.push(totalCustomers(state));
   h.revenue.push(Math.round(money.revenue));

@@ -5,7 +5,7 @@ import { getState, dispatch } from '../../js/core/store.js';
 import { NODES, NODE_IDS } from '../../js/data/techTree.js';
 import { BUILDINGS } from '../../js/data/buildings.js';
 import { SECTOR_TYPES } from '../../js/data/sectors.js';
-import { TIER_IDS, WORK, MONEY } from '../../js/data/balance.js';
+import { TIER_IDS, WORK, MONEY, CONTRACTORS } from '../../js/data/balance.js';
 import { STATUS, globalEffects } from '../../js/sim/effects.js';
 import { needsLeap, potentialTotal } from '../../js/sim/setup.js';
 import { canStartResearch, researchProjects } from '../../js/sim/research.js';
@@ -16,32 +16,33 @@ import { buildAllowed, capexCost } from '../../js/sim/build.js';
 import { capacityMw, peakMw, ownPeakMw } from '../../js/sim/grid.js';
 import { shortageAt } from '../../js/sim/market.js';
 import { canUpgrade, upgradeCost } from '../../js/sim/build.js';
-import { wages, upkeep, interest, budgetDollars, canTakeLoan, marketShare } from '../../js/sim/economy.js';
+import { canTakeLoan, marketShare, monthlyCosts as costsOf, loanStep, loanLimit } from '../../js/sim/economy.js';
 import { diff } from '../../js/data/difficulty.js';
 import { totalStaff, managementThreshold } from '../../js/sim/workforce.js';
-import { backlogWeeks } from '../../js/sim/repair.js';
+import { backlogWeeks, buildingRepairCost } from '../../js/sim/repair.js';
 import { buyoutCost, canMonopoly } from '../../js/sim/rivals.js';
 
 export const S = () => getState();
 export const act = (type, payload) => dispatch({ type, payload });
 
 export const owned = () => S().sectors.filter((s) => s.owned);
-export const monthlyCosts = () => wages(S()) + upkeep(S()) + interest(S()) + budgetDollars(S()).total;
+export const monthlyCosts = () => costsOf(S());
 export const done = (id) => [STATUS.UNLOCKED, STATUS.ACTIVE].includes(S().tech.nodes[id].status);
 
 // ---------- money ----------
 
-export function manageLoans({ bufferMonths = 1, repayAbove = 6 } = {}) {
+export function manageLoans({ bufferMonths = 1, repayAbove = 3 } = {}) {
   const c = monthlyCosts();
   while (S().company.cash < c * bufferMonths && canTakeLoan(S())) act('loan/take');
-  while (S().company.debt > 0 && S().company.cash > c * repayAbove + MONEY.LOAN_STEP) act('loan/repay');
+  while (S().company.debt > 0 && S().company.cash > c * repayAbove + loanStep(S())) act('loan/repay');
 }
 
 export const canSpend = (amount, keepMonths = 2) => S().company.cash - amount > monthlyCosts() * keepMonths;
 
 // Borrow (in $50,000 steps) to make a good investment possible.
-export function borrowFor(amount, keepMonths = 1) {
-  while (!canSpend(amount, keepMonths) && canTakeLoan(S())) act('loan/take');
+// Version 1.2: not past 60 % of the loan limit (keeps room for bad months).
+export function borrowFor(amount, keepMonths = 1, maxShare = 0.6) {
+  while (!canSpend(amount, keepMonths) && canTakeLoan(S()) && S().company.debt + loanStep(S()) <= loanLimit(S()) * maxShare) act('loan/take');
   return canSpend(amount, keepMonths);
 }
 
@@ -111,9 +112,11 @@ export function activateOneTime() {
 
 // ---------- map ----------
 
-export function build(type, sectorId) {
+export function build(type, sectorId, { borrow = false } = {}) {
   const s = S();
-  if (!buildAllowed(s, type).ok || !canSpend(capexCost(s, BUILDINGS[type].cost))) return false;
+  const cost = capexCost(s, BUILDINGS[type].cost);
+  if (borrow) borrowFor(cost);
+  if (!buildAllowed(s, type).ok || !canSpend(cost, borrow ? 1 : 2)) return false;
   const spot = findFreeSpot(mapgen(s.seed), s.sectors.flatMap((x) => x.buildings), sectorId, BUILDINGS[type].size);
   if (!spot) return false;
   const before = s.sectors[sectorId].buildings.length;
@@ -121,10 +124,19 @@ export function build(type, sectorId) {
   return s.sectors[sectorId].buildings.length > before;
 }
 
-// A substation where the evening peak is close to the capacity.
+// A substation where the evening peak is close to the capacity, or new customers wait
+// for a connection (version 1.2). Borrows for it: a substation pays for itself.
 export function substations(margin = 0.85) {
   for (const sec of owned()) {
-    if (peakMw(S(), sec) > capacityMw(sec) * margin) build('substation', sec.id);
+    if (peakMw(S(), sec) > capacityMw(sec) * margin || sec.waiting > 0) build('substation', sec.id, { borrow: true });
+  }
+}
+
+// Version 1.2: repair broken buildings, and call an emergency crew for big damage.
+export function emergencies({ crewDamage = 15 } = {}) {
+  for (const sec of owned()) {
+    for (const b of sec.buildings) if (b.broken && !(b.repairWeeks > 0)) { borrowFor(buildingRepairCost(b)); act('building/repair', { id: b.id }); }
+    if (sec.damage >= crewDamage && !(sec.contractors > 0) && canSpend(CONTRACTORS.COST, 1)) act('sector/contractors', { sector: sec.id });
   }
 }
 
@@ -159,7 +171,9 @@ export function expand({ keepMonths = 1, max = 1 } = {}) {
     const cost = openCost(s);
     if (cost === null || !s.sectors.some((x) => canOpenSector({ ...s, company: { ...s.company, cash: Infinity } }, x.id).ok)) return;
     if (!borrowFor(cost, keepMonths)) return;
-    const best = s.sectors.filter((x) => canOpenSector(s, x.id).ok).sort((a, b) => potentialOf(b) - potentialOf(a))[0];
+    // Version 1.2: free customers count, so a sector full of rival customers is worth less.
+    const value = (x) => potentialOf(x) - (x.rival ? TIER_IDS.reduce((n, t) => n + x.rival.customers[t], 0) * (1 + x.rival.strength / 100) : 0);
+    const best = s.sectors.filter((x) => canOpenSector(s, x.id).ok).sort((a, b) => value(b) - value(a))[0];
     if (!best) return;
     act('sector/open', { sector: best.id });
     opened++;

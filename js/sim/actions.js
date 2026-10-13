@@ -9,7 +9,7 @@ import { refreshAvailable } from './setup.js';
 import { setSplit } from './budget.js';
 import { takeLoan, repayLoan } from './economy.js';
 import { isTierUnlocked } from './effects.js';
-import { placeBuilding, upgradeBuilding } from './build.js';
+import { placeBuilding, upgradeBuilding, buildInSector } from './build.js';
 import { hireOffice, closeOffice, scheduleAll } from './offices.js';
 import { startCampaign, stopCampaign } from './marketing.js';
 import { startResearch, cancelResearch, clampTeams, scheduleResearch } from './research.js';
@@ -17,6 +17,7 @@ import { startDeploy, cancelField, activateOneTime } from './deployment.js';
 import { hire, fire, setWage, rush } from './staffing.js';
 import { openSector } from './growth.js';
 import { stormPrep } from './disasters.js';
+import { callContractors, repairBuilding, assignTechnicians } from './repair.js';
 import { chooseEvent } from './eventCards.js';
 import { setFranchise, monopolyCharter, buyout, setDiscount } from './rivals.js';
 import { VICTORY } from '../data/advisorRules.js';
@@ -72,6 +73,8 @@ export const ACTIONS = {
   },
 
   'build/place': (state, { type, x, y }) => placeBuilding(state, type, x, y),
+  'build/sector': (state, { type, sector }) => buildInSector(state, type, sector),   // version 1.2: no tile to pick
+  'policy/autoPrep': (state, on) => { state.policy.autoPrep = !!on; },
   'building/upgrade': (state, { id }) => upgradeBuilding(state, id),
 
   // Version 1.1: offices, "Schedule all", campaigns and selling power to the government.
@@ -94,7 +97,12 @@ export const ACTIONS = {
   },
 
   'disaster/prep': (state, { sector }) => { stormPrep(state, sector); },
-  'event/choose': (state, { choice }) => { chooseEvent(state, choice); },
+  // Version 1.2: emergency crews and repairs of broken buildings.
+  'sector/contractors': (state, { sector }) => (callContractors(state, sector)
+    ? [{ type: 'news', payload: { key: 'contractors', sector: state.sectors[sector].name } }] : []),
+  'building/repair': (state, { id }) => { repairBuilding(state, id); },
+  'sector/assign': (state, { sector, count }) => { assignTechnicians(state, sector, count); },
+  'event/choose': (state, { choice }) => { withStateRng(state, (rng) => chooseEvent(state, choice, rng)); },
 
   'rival/franchise': (state, { sector, on }) => { setFranchise(state, sector, on); },
   'rival/monopoly': (state) => (monopolyCharter(state) ? [{ type: 'news', payload: { key: 'monopoly', kind: 'warn' } }] : []),

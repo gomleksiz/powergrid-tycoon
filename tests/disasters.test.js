@@ -109,6 +109,7 @@ test('Storm Prep: $10,000 and damage − 20 %', () => {
   const s = getState();
   const h = home(s);
   h.tech.D3 = 'ACTIVE';
+  dispatch({ type: 'policy/autoPrep', payload: false });   // pay it by hand here
   dispatch({ type: 'debug/disaster', payload: { type: 'windstorm', sector: h.id } });
   s.disasters.scheduled[0].week += 1;               // 2 weeks away, so a warning comes first
   if (s.disasters.scheduled[0].week > 4) { s.disasters.scheduled[0].week = 1; s.disasters.scheduled[0].month += 1; }
@@ -125,6 +126,26 @@ test('Storm Prep: $10,000 and damage − 20 %', () => {
   off();
   assert.equal(report.sectors[0].actual, 32);
   assert.equal(report.sectors[0].prep, true);
+});
+
+test('Storm Prep is paid by itself after a warning (version 1.2)', () => {
+  setState(rich(82));
+  const s = getState();
+  const h = home(s);
+  h.tech.D3 = 'ACTIVE';
+  assert.equal(s.policy.autoPrep, true);
+  dispatch({ type: 'debug/disaster', payload: { type: 'windstorm', sector: h.id } });
+  s.disasters.scheduled[0].week += 1;
+  if (s.disasters.scheduled[0].week > 4) { s.disasters.scheduled[0].week = 1; s.disasters.scheduled[0].month += 1; }
+  let warning = null;
+  const off = on('disaster:warning', (w) => { warning = w; });
+  const cash = s.company.cash;
+  dispatch({ type: 'time/week' });
+  dispatch({ type: 'time/week' });
+  off();
+  assert.ok(h.prep);
+  assert.deepEqual(warning.prepped, [h.id]);
+  assert.ok(s.company.cash <= cash - 10_000);
 });
 
 test('an earthquake stops a fission plant for 2 months', () => {
@@ -167,13 +188,37 @@ test('event cards: conditions, a choice applies its effects, cooldown', () => {
   assert.equal(s.company.cash, cash - 100_000);
   assert.equal(s.meters.gs, gs + 8);
   assert.equal(s.events.pending, null);
-  assert.equal(s.events.cooldown, 3);
+  assert.equal(s.events.cooldown, 2);   // version 1.2: 3 → 2
   dispatch({ type: 'debug/event', payload: 'fuelCrisis' });
   dispatch({ type: 'event/choose', payload: { choice: 1 } });
   assert.equal(s.market.eventMult, 1.5);
   assert.equal(s.market.priceMult, 1.1);
   for (let i = 0; i < 4 * 3; i++) dispatch({ type: 'time/week' });
   assert.equal(s.market.eventMult, 1);
+});
+
+test('version 1.2 cards: strike, broken substation, heat dome, cyber attack, engineers leave', () => {
+  setState(rich(87));
+  const s = getState();
+  const h = s.sectors.find((x) => x.owned);
+  s.time.month = 40;
+  dispatch({ type: 'debug/event', payload: 'unionStrike' });
+  dispatch({ type: 'event/choose', payload: { choice: 1 } });
+  assert.equal(s.staff.strikeMonths, 2);
+  dispatch({ type: 'debug/event', payload: 'substationFire' });
+  dispatch({ type: 'event/choose', payload: { choice: 1 } });
+  assert.ok(h.buildings.some((b) => b.type === 'substation' && b.broken));
+  assert.ok(!eligibleCards(s).includes('substationFire'));   // no working substation left
+  dispatch({ type: 'debug/event', payload: 'heatDome' });
+  dispatch({ type: 'event/choose', payload: { choice: 1 } });
+  assert.equal(s.market.peakMult, 1.3);
+  dispatch({ type: 'debug/event', payload: 'cyberAttack' });
+  dispatch({ type: 'event/choose', payload: { choice: 1 } });
+  assert.equal(h.damage, 35);
+  const eng = s.staff.engineers;
+  dispatch({ type: 'debug/event', payload: 'poachEngineers' });
+  dispatch({ type: 'event/choose', payload: { choice: 1 } });
+  assert.equal(s.staff.engineers, Math.max(0, eng - 3));
 });
 
 test('about 1 event card each 6 months', () => {

@@ -1,7 +1,7 @@
 // All tunable numbers. No magic numbers in the code: add new ones here.
 // Section numbers point to the design document.
 
-export const GAME_VERSION = '1.1.0';
+export const GAME_VERSION = '1.2.0';
 // Locked at 1 for the release. Each later change to the state needs a migration (js/save/migrate.js).
 export const SAVE_VERSION = 1;
 
@@ -26,11 +26,13 @@ export const DEFAULT_DIFFICULTY = 'normal';
 
 export const TIER_IDS = ['low', 'medium', 'high', 'corporate'];
 
+// serviceCost (version 1.2): billing, meters and the call center, $ per customer each month.
+// peakKw (version 1.2): design × 1.25, so the start grid is not far too big.
 export const TIERS = {
-  low:       { tariff: 50,    kwh: 400,    peakKw: 1.2, limitH: 48,  baseChurn: 0.005, outageK: 0.02 },
-  medium:    { tariff: 120,   kwh: 900,    peakKw: 2.5, limitH: 12,  baseChurn: 0.012, outageK: 0.05 },
-  high:      { tariff: 250,   kwh: 2_500,  peakKw: 8,   limitH: 4,   baseChurn: 0.015, outageK: 0.08 },
-  corporate: { tariff: 6_000, kwh: 60_000, peakKw: 120, limitH: 0.5, baseChurn: 0,     outageK: 0 },
+  low:       { tariff: 50,    kwh: 400,    peakKw: 1.5, limitH: 48,  baseChurn: 0.005, outageK: 0.02, serviceCost: 3 },
+  medium:    { tariff: 120,   kwh: 900,    peakKw: 3.1, limitH: 12,  baseChurn: 0.012, outageK: 0.05, serviceCost: 8 },
+  high:      { tariff: 250,   kwh: 2_500,  peakKw: 10,  limitH: 4,   baseChurn: 0.015, outageK: 0.08, serviceCost: 20 },
+  corporate: { tariff: 6_000, kwh: 60_000, peakKw: 150, limitH: 0.5, baseChurn: 0,     outageK: 0,    serviceCost: 400 },
 };
 
 export const CORPORATE = {
@@ -45,7 +47,7 @@ export const HIGH_TIER = {
 export const PRICE = { MIN: 0.6, MAX: 1.5, STEP: 0.05, START: 1.0, LOW_GS_MAX: 1.1 };
 
 export const CUSTOMERS = {
-  NEW_RATE: 0.016,
+  NEW_RATE: 0.009,           // version 1.2: 0.016 → 0.009 (the towns are 1.5 × bigger)
   PROSUMER_RATE: 0.009,      // share of non-prosumer homes that add solar each month × F marketing
   MKT_BASE: 0.5,
   MKT_DIVISOR: 20_000,
@@ -54,7 +56,9 @@ export const CUSTOMERS = {
   CS_BASE: 0.5,
   WORD_OF_MOUTH_CS: 75,
   WORD_OF_MOUTH: 0.1,
-  PRICE_CHURN: 0.04,
+  PRICE_ELASTICITY: 2.5,     // version 1.2: F price = 1 − 2.5 × (m − 1), in [0, 2]
+  PRICE_F_MAX: 2,
+  PRICE_CHURN: 0.10,         // version 1.2: 0.04 → 0.10, so a high price really costs customers
   MAX_CHURN: 0.25,
   LOW_CS: 30,
   LOW_CS_CHURN_MULT: 1.5,
@@ -67,7 +71,9 @@ export const MONEY = {
   UPKEEP_BUILDING: 500,
   TAX_RATE: 0.20,
   SELLBACK_SHARE: 0.5,       // extra own power sells at 50% of wholesale
-  LOAN_STEP: 50_000,
+  LOAN_STEP: 50_000,         // the smallest loan step
+  LOAN_REVENUE_MONTHS: 2,    // version 1.2: the bank lends up to 2 months of revenue (at least the difficulty limit) …
+  LOAN_STEPS: 10,            // … in about 10 steps (rounded to 1, 2 or 5 × 10ⁿ)
   INTEREST_RATE: 0.01,       // per month
 };
 
@@ -159,7 +165,31 @@ export const GROWTH = {
   // More homes and firms each year in every sector (compound).
   POTENTIAL_YEAR: { low: 0.01, medium: 0.015, high: 0.02, corporate: 0.03 },
   START_MONTH: 101,          // the towns start to grow with Phase 3 (2038)
-  PEAK_YEAR: 0.01,           // each customer needs 1 % more power at the evening peak each year
+  PEAK_YEAR: 0.02,           // each customer needs 2 % more power at the evening peak each year (version 1.2: 1 % → 2 %)
+};
+
+// ---------- Version 1.2: a harder game ----------
+
+// New customers can only connect while the sector's substations have room at the evening peak.
+export const CONNECT = {
+  SHARE: 1.0,                // the peak (without a heatwave) may use 100 % of the capacity
+};
+
+// Emergency crew: contractors come at once, repair 1 sector first (before the outage hours count)
+// and do not strike. Paid when called.
+export const CONTRACTORS = {
+  TECHS: 6,
+  WEEKS: 2,
+  COST: 15_000,
+};
+
+// Disasters can break buildings in a hit sector. Chance for each building = damage × CHANCE_PER_POINT
+// × the sector's tech damage multiplier. A broken building gives nothing until it is repaired.
+export const BREAKDOWN = {
+  CHANCE_PER_POINT: 0.006,   // 40 damage → 24 % for each building
+  REPAIR_SHARE: 0.2,         // repair cost = 20 % of the building cost
+  REPAIR_WEEKS: 2,
+  MIN_REPAIR: 5_000,
 };
 
 // Regional power supply (version 1.1). Demand in the region grows faster than its plants,
@@ -198,7 +228,8 @@ export const SAT = {
   ANTITRUST_SHARE: 0.8, ANTITRUST: 15,
   COAL_SHARE: 0.6,               // k = wholesale share × 0.6
   STRIKE_CHANCE: 0.5, STRIKE_MONTHS: 1,
-  AUDIT_FINE: [50_000, 250_000], AUDIT_STEP: 10_000, AUDIT_EVERY: 6,
+  AUDIT_FINE: [20_000, 250_000], AUDIT_STEP: 10_000, AUDIT_EVERY: 6,
+  AUDIT_REVENUE: [0.25, 0.75],  // version 1.2: the fine is 25–75 % of last month's revenue (in the range above)
   LOW_GS_PRICE_MAX: 1.1,
   ARROW_DEADBAND: 0.5,           // ▲ / ▼ only when the target is this far away
 };

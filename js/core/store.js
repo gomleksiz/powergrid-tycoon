@@ -50,6 +50,7 @@ export function createState(seed, difficulty = DEFAULT_DIFFICULTY, options = {})
     events: { cooldown: 0, pending: null },
     rivals: RIVAL_IDS.map((id) => ({ id, entered: false })),
     rivalPolicy: { franchise: [], monopolyCharter: false },
+    policy: { autoPrep: true },   // version 1.2: pay Storm Prep by itself after a warning
     goals: {
       target: null,
       hold: { monopoly: 0, singularity: 0, utopia: 0 },
@@ -59,7 +60,11 @@ export function createState(seed, difficulty = DEFAULT_DIFFICULTY, options = {})
     sectors,
     tech: createTech(),
     tutorial: { enabled: options.tutorial ?? false, step: 0, breakDone: false },
-    history: { cash: [], customers: [], revenue: [], net: [], outage: [], cs: [], es: [], gs: [], share: [] },
+    history: {
+      cash: [], customers: [], revenue: [], net: [], outage: [], cs: [], es: [], gs: [], share: [],
+      // version 1.2: for the live board
+      costs: [], peak: [], ownPeak: [], capacity: [], demandKwh: [], ownKwh: [], wholesale: [], rivals: [],
+    },
     report: null,
   };
 }

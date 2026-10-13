@@ -2,9 +2,9 @@
 // Each tip: { id, details, action } — action is a dispatch object, or { build: type } for the map.
 
 import { OUTAGE_HELP } from '../data/advisorRules.js';
-import { STAFF, WORK } from '../data/balance.js';
+import { STAFF, WORK, CONTRACTORS } from '../data/balance.js';
 import { BUILDINGS, levelOf } from '../data/buildings.js';
-import { repairPower, freeTechnicians, totalDamage } from './repair.js';
+import { repairPower, freeTechnicians, totalDamage, canCallContractors, buildingRepairCost, canRepairBuilding } from './repair.js';
 import { canUpgrade, buildAllowed } from './build.js';
 import { capacityMw, peakMw } from './grid.js';
 import { isStriking } from './workforce.js';
@@ -21,6 +21,16 @@ export function outageAdvice(state, sector) {
   const p = sector.lastParts;
   const tips = [];
   const add = (id, details, action = null) => tips.push({ id, details, action });
+
+  // Version 1.2: broken buildings first, then the emergency crew.
+  for (const b of sector.buildings.filter((x) => x.broken && !(x.repairWeeks > 0))) {
+    add('repairBuilding', { type: b.type, cost: buildingRepairCost(b) },
+      canRepairBuilding(state, b, sector) ? { type: 'building/repair', payload: { id: b.id } } : null);
+  }
+  if (sector.damage > 0 && !(sector.contractors > 0)) {
+    add('contractors', { techs: CONTRACTORS.TECHS, weeks: CONTRACTORS.WEEKS, cost: CONTRACTORS.COST },
+      canCallContractors(state, sector.id) ? { type: 'sector/contractors', payload: { sector: sector.id } } : null);
+  }
 
   if (sector.damage > 0) {
     const weeks = repairWeeksHere(state, sector);
@@ -47,7 +57,8 @@ export function outageAdvice(state, sector) {
 
   const cap = capacityMw(sector);
   const peak = peakMw(state, sector);
-  if (p.overload > 0 || peak > cap * OUTAGE_HELP.CAPACITY_WARN) {
+  if (sector.waiting > 0) add('connectFull', { waiting: sector.waiting });
+  if (p.overload > 0 || peak > cap * OUTAGE_HELP.CAPACITY_WARN || sector.waiting > 0) {
     const sub = sector.buildings.find((b) => b.type === 'substation' && canUpgrade(state, b.id).ok);
     if (sub) add('upgradeSubstation', { level: levelOf(sub) + 1 }, { type: 'building/upgrade', payload: { id: sub.id } });
     add('buildSubstation', { mw: BUILDINGS.substation.capacityMw }, buildAllowed(state, 'substation').ok ? { build: 'substation' } : null);

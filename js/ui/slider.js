@@ -26,16 +26,21 @@ export function createSlider({ label, min, max, step, onChange, lockable = false
     ? h('button', { class: 'btn sl-lock', 'aria-pressed': 'false', onclick: () => onLock(lock.getAttribute('aria-pressed') !== 'true') }, '🔓')
     : null;
   const note = h('div', { class: 'sl-note dim small' });
+  const effect = h('div', { class: 'sl-effect small', hidden: true });   // version 1.2: what the slider does now
 
   const el = h('div', { class: 'slider' },
     h('div', { class: 'sl-head' }, h('label', { for: id }, label), value, extra, lock),
     h('div', { class: 'sl-row' }, minus, input, plus),
+    effect,
     note,
   );
 
   return {
     el,
-    set(v, { text, extraText = '', disabled = false, locked = false, noteText = '' } = {}) {
+    set(v, { text, extraText = '', disabled = false, locked = false, noteText = '', effectText = '', effectClass = '' } = {}) {
+      effect.textContent = effectText;
+      effect.hidden = !effectText;
+      effect.className = `sl-effect small ${effectClass}`;
       current = v;
       if (document.activeElement !== input) input.value = String(v);
       value.textContent = text ?? String(v);
